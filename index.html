@@ -100,7 +100,7 @@ h1 span{font-weight:600;color:#b8c8f0;}
 .scale-pill.root{background:#1a3530;color:#a0e0c0;border-color:#3a8060;}
 
 /* スケール表示: 非構成音の上半分を斜線ハッチで無効化（低音域の濃紺と混同しないよう単色黒でなくパターン） */
-.fretboard:has(.scale-tone) .fret-cell:not(.scale-tone)::before{content:'';position:absolute;left:0;right:0;top:0;height:50%;background:repeating-linear-gradient(45deg,rgba(10,12,18,.92) 0 5px,rgba(96,108,132,.5) 5px 7px);border-radius:4px 4px 0 0;pointer-events:none;}
+.fretboard:has(.scale-tone) .fret-cell:not(.scale-tone)::before{content:'';position:absolute;left:0;right:0;top:0;height:50%;background:repeating-linear-gradient(45deg,rgba(14,16,24,.92) 0 6px,rgba(150,160,185,.7) 6px 9px);border-radius:4px 4px 0 0;pointer-events:none;}
 .fret-cell.scale-root::before{content:'';position:absolute;left:0;right:0;top:0;height:50%;box-shadow:inset 0 2px 0 rgba(255,255,255,.9);border-radius:4px 4px 0 0;pointer-events:none;}
 .rbtn{font-family:'Space Mono',monospace;font-size:10px;background:var(--bg);color:var(--text-mid);border:1px solid var(--border);border-radius:6px;padding:6px 11px;cursor:pointer;transition:background .1s,color .1s,border-color .1s;}
 .rbtn:hover{background:#1a2035;color:var(--text-hi);border-color:#3a5090;}
@@ -148,9 +148,7 @@ h1 span{font-weight:600;color:#b8c8f0;}
 @media(pointer:coarse){
   .fretboard{column-gap:3px;}
 }
-/* 盤面横スクロールバー */
-.board-scroll-row{width:100%;max-width:1200px;}
-#boardScroll{width:100%;height:28px;margin:0;accent-color:#5a7fd0;cursor:pointer;}
+/* 盤面の横スクロールはセル以外の場所（フレット番号行・ドット行・隙間）のスワイプで行う */
 .fret-cell:hover{transform:scale(1.08);box-shadow:0 0 14px rgba(255,255,255,.18);z-index:10;border-color:rgba(255,255,255,.25);}
 .fret-cell.open{border-radius:4px;}
 .nut-gap-cell{border-left:3px solid #5a6888;background:transparent!important;cursor:default;min-height:44px;}
@@ -160,7 +158,7 @@ h1 span{font-weight:600;color:#b8c8f0;}
 
 /* highlight states */
 /* コード表示: 非構成音（.dimmed が付く）の下半分を斜線ハッチで無効化 */
-.fret-cell.dimmed::after{content:'';position:absolute;left:0;right:0;bottom:0;height:50%;background:repeating-linear-gradient(45deg,rgba(10,12,18,.92) 0 5px,rgba(96,108,132,.5) 5px 7px);border-radius:0 0 4px 4px;pointer-events:none;}
+.fret-cell.dimmed::after{content:'';position:absolute;left:0;right:0;bottom:0;height:50%;background:repeating-linear-gradient(45deg,rgba(14,16,24,.92) 0 6px,rgba(150,160,185,.7) 6px 9px);border-radius:0 0 4px 4px;pointer-events:none;}
 .fret-cell.chord-root::after{content:'';position:absolute;left:0;right:0;bottom:0;height:50%;box-shadow:inset 0 -2px 0 rgba(255,255,255,.9);border-radius:0 0 4px 4px;pointer-events:none;}
 
 /* note-click same-pitch highlight */
@@ -205,9 +203,6 @@ footer code{font-family:'Space Mono',monospace;background:var(--surface);padding
 
 <div class="board-wrapper">
   <div class="fretboard" id="board"></div>
-</div>
-<div class="board-scroll-row">
-  <input type="range" id="boardScroll" min="0" max="1000" value="0" step="1" aria-label="フレットボードを横スクロール">
 </div>
 
 <div class="drawer-area" id="drawerArea">
@@ -1462,30 +1457,9 @@ document.querySelectorAll('.toolbar-btn').forEach(btn=>{
     document.querySelectorAll('.drawer').forEach(x=>x.hidden=true);
     document.querySelectorAll('.toolbar-btn').forEach(b=>b.classList.remove('active'));
     openDrawer=null;
-    if(willOpen){
-      d.hidden=false;btn.classList.add('active');openDrawer=d;
-      requestAnimationFrame(()=>d.scrollIntoView({behavior:'smooth',block:'start'}));
-    }
+    if(willOpen){d.hidden=false;btn.classList.add('active');openDrawer=d;}
   });
 });
-
-// ---- 盤面横スクロールバー（#boardScroll、0-1000 の正規化値） ----
-const boardWrap=document.querySelector('.board-wrapper');
-const boardScrollInput=document.getElementById('boardScroll');
-boardScrollInput.addEventListener('input',()=>{
-  const max=boardWrap.scrollWidth-boardWrap.clientWidth;
-  boardWrap.scrollLeft=boardScrollInput.value/1000*max;
-});
-boardWrap.addEventListener('scroll',()=>{
-  const max=boardWrap.scrollWidth-boardWrap.clientWidth;
-  boardScrollInput.value=max>0?Math.round(boardWrap.scrollLeft/max*1000):0;
-});
-// 盤面がはみ出していないとき（PC広画面など）はスクロールバーを隠す
-const updateBoardScrollVis=()=>{
-  boardScrollInput.parentElement.style.display=(boardWrap.scrollWidth-boardWrap.clientWidth>4)?'':'none';
-};
-new ResizeObserver(updateBoardScrollVis).observe(board);
-window.addEventListener('resize',updateBoardScrollVis);
 
 // ============================================================
 // INIT
