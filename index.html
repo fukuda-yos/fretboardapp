@@ -27,10 +27,10 @@ h1 span{font-weight:600;color:#b8c8f0;}
 .toolbar-btn{font-family:'Space Mono',monospace;font-size:11px;background:var(--bg);color:var(--text-mid);border:1px solid var(--border);border-radius:6px;padding:8px 14px;cursor:pointer;transition:background .1s,color .1s,border-color .1s;white-space:nowrap;}
 .toolbar-btn:hover{color:var(--text-hi);border-color:#3a4a70;}
 .toolbar-btn.active{background:#1a2540;color:#9ab8e0;border-color:#2a3a60;}
-/* ドロワーは画面下固定のボトムシート（開閉で盤面が動かない） */
-.drawer-area{position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;flex-direction:column;align-items:center;padding:0 10px calc(10px + env(safe-area-inset-bottom));pointer-events:none;}
+/* ドロワーは盤面の下に通常配置（開くと下へスクロールして表示） */
+.drawer-area{width:100%;max-width:1200px;display:flex;flex-direction:column;align-items:center;gap:12px;}
 .drawer-area:not(:has(.drawer:not([hidden]))){display:none;}
-.drawer{width:100%;max-width:1200px;max-height:55vh;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 -8px 30px rgba(0,0,0,.55);pointer-events:auto;}
+.drawer{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;}
 .drawer[hidden]{display:none;}
 .drawer > .panel{max-width:none;background:transparent;border:none;padding:0;}
 .drawer > .controls-bar{max-width:none;background:transparent;border:none;padding:0;}
@@ -99,8 +99,8 @@ h1 span{font-weight:600;color:#b8c8f0;}
 .scale-pill{background:#0f2520;color:#70c0a0;border:1px solid #2a6050;border-radius:4px;padding:2px 7px;font-family:'Space Mono',monospace;font-size:10px;}
 .scale-pill.root{background:#1a3530;color:#a0e0c0;border-color:#3a8060;}
 
-/* スケール表示: 非構成音の上半分をブラックアウト（構成音はデフォルトのピッチカラーのまま） */
-.fretboard:has(.scale-tone) .fret-cell:not(.scale-tone)::before{content:'';position:absolute;left:0;right:0;top:0;height:50%;background:rgba(8,10,16,.94);border-radius:4px 4px 0 0;pointer-events:none;}
+/* スケール表示: 非構成音の上半分を斜線ハッチで無効化（低音域の濃紺と混同しないよう単色黒でなくパターン） */
+.fretboard:has(.scale-tone) .fret-cell:not(.scale-tone)::before{content:'';position:absolute;left:0;right:0;top:0;height:50%;background:repeating-linear-gradient(45deg,rgba(10,12,18,.92) 0 5px,rgba(96,108,132,.5) 5px 7px);border-radius:4px 4px 0 0;pointer-events:none;}
 .fret-cell.scale-root::before{content:'';position:absolute;left:0;right:0;top:0;height:50%;box-shadow:inset 0 2px 0 rgba(255,255,255,.9);border-radius:4px 4px 0 0;pointer-events:none;}
 .rbtn{font-family:'Space Mono',monospace;font-size:10px;background:var(--bg);color:var(--text-mid);border:1px solid var(--border);border-radius:6px;padding:6px 11px;cursor:pointer;transition:background .1s,color .1s,border-color .1s;}
 .rbtn:hover{background:#1a2035;color:var(--text-hi);border-color:#3a5090;}
@@ -142,11 +142,15 @@ h1 span{font-weight:600;color:#b8c8f0;}
 .dot-cell{display:flex;align-items:center;justify-content:center;padding:2px 0 4px;gap:3px;}
 .dot{width:6px;height:6px;border-radius:50%;background:var(--border);}
 .string-label{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;color:var(--text-mid);display:flex;align-items:center;justify-content:center;}
-.fret-cell{border-radius:4px;padding:5px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:44px;border:1px solid rgba(255,255,255,.04);cursor:pointer;user-select:none;position:relative;transition:transform .08s,box-shadow .08s,filter .08s,opacity .15s;touch-action:pan-x pan-y;}
+.fret-cell{border-radius:4px;padding:5px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:44px;border:1px solid rgba(255,255,255,.04);cursor:pointer;user-select:none;position:relative;transition:transform .08s,box-shadow .08s,filter .08s,opacity .15s;touch-action:none;}
+/* ↑touch-action:none — セル上のジェスチャーは全て発音(タップ/グリッサンド)。盤面の横移動は #boardScroll で行う */
 /* タッチ端末: セル間に緩衝帯を作り隣接誤タップを減らす（セル幅44px化はbuildFretboard側） */
 @media(pointer:coarse){
   .fretboard{column-gap:3px;}
 }
+/* 盤面横スクロールバー */
+.board-scroll-row{width:100%;max-width:1200px;}
+#boardScroll{width:100%;height:28px;margin:0;accent-color:#5a7fd0;cursor:pointer;}
 .fret-cell:hover{transform:scale(1.08);box-shadow:0 0 14px rgba(255,255,255,.18);z-index:10;border-color:rgba(255,255,255,.25);}
 .fret-cell.open{border-radius:4px;}
 .nut-gap-cell{border-left:3px solid #5a6888;background:transparent!important;cursor:default;min-height:44px;}
@@ -155,8 +159,8 @@ h1 span{font-weight:600;color:#b8c8f0;}
 .nut-gap-cell:hover{transform:none;box-shadow:none;}
 
 /* highlight states */
-/* コード表示: 非構成音（.dimmed が付く）の下半分をブラックアウト。構成音はピッチカラーのまま */
-.fret-cell.dimmed::after{content:'';position:absolute;left:0;right:0;bottom:0;height:50%;background:rgba(8,10,16,.94);border-radius:0 0 4px 4px;pointer-events:none;}
+/* コード表示: 非構成音（.dimmed が付く）の下半分を斜線ハッチで無効化 */
+.fret-cell.dimmed::after{content:'';position:absolute;left:0;right:0;bottom:0;height:50%;background:repeating-linear-gradient(45deg,rgba(10,12,18,.92) 0 5px,rgba(96,108,132,.5) 5px 7px);border-radius:0 0 4px 4px;pointer-events:none;}
 .fret-cell.chord-root::after{content:'';position:absolute;left:0;right:0;bottom:0;height:50%;box-shadow:inset 0 -2px 0 rgba(255,255,255,.9);border-radius:0 0 4px 4px;pointer-events:none;}
 
 /* note-click same-pitch highlight */
@@ -198,6 +202,14 @@ footer code{font-family:'Space Mono',monospace;background:var(--surface);padding
   <button class="toolbar-btn" data-drawer="drawerListen">▶ 試聴</button>
   <button class="toolbar-btn" data-drawer="drawerRhythm">🥁 リズム</button>
 </div>
+
+<div class="board-wrapper">
+  <div class="fretboard" id="board"></div>
+</div>
+<div class="board-scroll-row">
+  <input type="range" id="boardScroll" min="0" max="1000" value="0" step="1" aria-label="フレットボードを横スクロール">
+</div>
+
 <div class="drawer-area" id="drawerArea">
   <div class="drawer" id="drawerInst" hidden>
 
@@ -349,10 +361,6 @@ footer code{font-family:'Space Mono',monospace;background:var(--surface);padding
 </div>
 
   </div>
-</div>
-
-<div class="board-wrapper">
-  <div class="fretboard" id="board"></div>
 </div>
 
 <footer>
@@ -744,23 +752,30 @@ function clearPitchHighlight(){
   pitchHighlightCells=[];
 }
 
-// ---- セル発音のポインタ対応（マルチタッチ + 誤発音防止） ----
-// タッチ: 指ごと(pointerId)に独立してタップ判定するため、複数指の同時押しで和音が鳴る。
-// 指が12px以上動いた場合やスクロール開始(pointercancel)では発音しない（従来のclick同様に誤発音なし）。
-// マウス: pointerdown で即発音（clickより反応が良い）。
-function attachCellTap(cell,fire){
-  cell.addEventListener('pointerdown',e=>{
-    if(e.pointerType==='mouse'){if(e.button===0)fire();return;}
-    cell._tapId=e.pointerId;cell._tapX=e.clientX;cell._tapY=e.clientY;
-  });
-  cell.addEventListener('pointerup',e=>{
-    if(e.pointerType==='mouse')return;
-    if(cell._tapId!==e.pointerId)return;
-    cell._tapId=null;
-    if(Math.hypot(e.clientX-cell._tapX,e.clientY-cell._tapY)<12)fire();
-  });
-  cell.addEventListener('pointercancel',()=>{cell._tapId=null;});
-}
+// ---- セル発音のポインタ対応（マルチタッチ + グリッサンド） ----
+// 盤面の横移動は #boardScroll スライダーに移したため（セルは touch-action:none）、
+// セル上のジェスチャーは全て発音に使える:
+//  - 押した瞬間に発音（タッチ/マウスとも）
+//  - 指を滑らせると通過セルが順に鳴る（グリッサンド）
+//  - pointerId ごとに独立追跡なので複数指の同時押し・同時スライドも可
+function attachCellTap(cell,fire){cell._fire=fire;} // buildFretboard がセル毎の発音関数を登録する
+const activeGliss=new Map(); // pointerId → 直前に発音したセル
+board.addEventListener('pointerdown',e=>{
+  if(e.pointerType==='mouse'&&e.button!==0)return;
+  const cell=e.target.closest&&e.target.closest('.fret-cell');
+  if(!cell||!cell._fire)return;
+  cell._fire();
+  activeGliss.set(e.pointerId,cell);
+});
+board.addEventListener('pointermove',e=>{
+  if(!activeGliss.has(e.pointerId))return;
+  if(e.pointerType==='mouse'&&e.buttons===0){activeGliss.delete(e.pointerId);return;}
+  const el=document.elementFromPoint(e.clientX,e.clientY);
+  const cell=el&&el.closest?el.closest('.fret-cell'):null;
+  if(cell&&cell._fire&&cell!==activeGliss.get(e.pointerId)){cell._fire();activeGliss.set(e.pointerId,cell);}
+});
+window.addEventListener('pointerup',e=>activeGliss.delete(e.pointerId));
+window.addEventListener('pointercancel',e=>activeGliss.delete(e.pointerId));
 
 function buildFretboard(){
   const{openMidi:OPEN_MIDI,nameMap:NAME_MAP,fretCount:FRET_COUNT}=inst();
@@ -1447,9 +1462,30 @@ document.querySelectorAll('.toolbar-btn').forEach(btn=>{
     document.querySelectorAll('.drawer').forEach(x=>x.hidden=true);
     document.querySelectorAll('.toolbar-btn').forEach(b=>b.classList.remove('active'));
     openDrawer=null;
-    if(willOpen){d.hidden=false;btn.classList.add('active');openDrawer=d;}
+    if(willOpen){
+      d.hidden=false;btn.classList.add('active');openDrawer=d;
+      requestAnimationFrame(()=>d.scrollIntoView({behavior:'smooth',block:'start'}));
+    }
   });
 });
+
+// ---- 盤面横スクロールバー（#boardScroll、0-1000 の正規化値） ----
+const boardWrap=document.querySelector('.board-wrapper');
+const boardScrollInput=document.getElementById('boardScroll');
+boardScrollInput.addEventListener('input',()=>{
+  const max=boardWrap.scrollWidth-boardWrap.clientWidth;
+  boardWrap.scrollLeft=boardScrollInput.value/1000*max;
+});
+boardWrap.addEventListener('scroll',()=>{
+  const max=boardWrap.scrollWidth-boardWrap.clientWidth;
+  boardScrollInput.value=max>0?Math.round(boardWrap.scrollLeft/max*1000):0;
+});
+// 盤面がはみ出していないとき（PC広画面など）はスクロールバーを隠す
+const updateBoardScrollVis=()=>{
+  boardScrollInput.parentElement.style.display=(boardWrap.scrollWidth-boardWrap.clientWidth>4)?'':'none';
+};
+new ResizeObserver(updateBoardScrollVis).observe(board);
+window.addEventListener('resize',updateBoardScrollVis);
 
 // ============================================================
 // INIT
