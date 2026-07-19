@@ -21,6 +21,18 @@ h1 span{font-weight:600;color:#b8c8f0;}
 /* PANELS */
 .panel{width:100%;max-width:960px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
 .panel-title{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.2em;color:var(--text-dim);text-transform:uppercase;}
+
+/* TOOLBAR + DRAWERS (UI案4) */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;max-width:1200px;}
+.toolbar-btn{font-family:'Space Mono',monospace;font-size:11px;background:var(--bg);color:var(--text-mid);border:1px solid var(--border);border-radius:6px;padding:8px 14px;cursor:pointer;transition:background .1s,color .1s,border-color .1s;white-space:nowrap;}
+.toolbar-btn:hover{color:var(--text-hi);border-color:#3a4a70;}
+.toolbar-btn.active{background:#1a2540;color:#9ab8e0;border-color:#2a3a60;}
+.drawer-area{width:100%;max-width:1200px;display:flex;flex-direction:column;align-items:center;gap:12px;}
+.drawer-area:not(:has(.drawer:not([hidden]))){display:none;}
+.drawer{width:100%;max-width:1200px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;}
+.drawer[hidden]{display:none;}
+.drawer > .panel{max-width:none;background:transparent;border:none;padding:0;}
+.drawer > .controls-bar{max-width:none;background:transparent;border:none;padding:0;}
 .key-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
 .key-mode-btns{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;flex-shrink:0;}
 .mode-btn{font-family:'Space Mono',monospace;font-size:10px;padding:6px 12px;background:var(--bg);color:var(--text-dim);border:none;cursor:pointer;transition:background .12s,color .12s;}
@@ -175,6 +187,48 @@ footer code{font-family:'Space Mono',monospace;background:var(--surface);padding
   <span class="legend-label">高音 (E6)</span>
 </div>
 
+<!-- TOOLBAR + DRAWERS (UI案4) -->
+<div class="toolbar" id="toolbar">
+  <button class="toolbar-btn" data-drawer="drawerInst">🎸 楽器・音色</button>
+  <button class="toolbar-btn" data-drawer="drawerChord">♩ コード</button>
+  <button class="toolbar-btn" data-drawer="drawerScale">〜 スケール</button>
+  <button class="toolbar-btn" data-drawer="drawerListen">▶ 試聴</button>
+  <button class="toolbar-btn" data-drawer="drawerRhythm">🥁 リズム</button>
+</div>
+<div class="drawer-area" id="drawerArea">
+  <div class="drawer" id="drawerInst" hidden>
+
+<!-- CONTROLS BAR -->
+<div class="controls-bar">
+  <div class="playing-bar" id="playingBar">— クリックして音を鳴らす —</div>
+  <div class="timbre-select">
+    <label for="instrumentSelect">楽器</label>
+    <select id="instrumentSelect">
+      <option value="guitar">ギター (6弦)</option>
+      <option value="bass">ベース (4弦)</option>
+    </select>
+  </div>
+  <div class="timbre-select">
+    <label for="timbreSelect">音色</label>
+    <select id="timbreSelect">
+      <option value="guitar">ギター</option>
+      <option value="bass">ベース</option>
+      <option value="piano">ピアノ</option>
+      <option value="synth">シンセ</option>
+    </select>
+  </div>
+  <div class="flip-toggle">
+    <label for="flipSwitch">低弦を上に</label>
+    <label class="switch">
+      <input type="checkbox" id="flipSwitch">
+      <span class="slider"></span>
+    </label>
+  </div>
+</div>
+
+  </div>
+  <div class="drawer" id="drawerChord" hidden>
+
 <!-- KEY + DIATONIC PANEL -->
 <div class="panel" id="keyPanel">
   <div class="panel-title">キー &amp; ダイアトニックコード</div>
@@ -201,6 +255,19 @@ footer code{font-family:'Space Mono',monospace;background:var(--surface);padding
   </div>
 </div>
 
+<!-- MANUAL INPUT PANEL -->
+<div class="panel" id="inputPanel">
+  <div class="panel-title">コード直接入力</div>
+  <div class="chord-input-row">
+    <input type="text" id="chordInput" placeholder="例: Am7, Cmaj7, G7" autocomplete="off" spellcheck="false">
+    <button class="btn-sm" id="btnClear">クリア</button>
+  </div>
+  <div class="chord-info" id="chordInfo">コード名を入力、またはキーを選んでコードをクリック</div>
+</div>
+
+  </div>
+  <div class="drawer" id="drawerScale" hidden>
+
 <!-- SCALE DISPLAY PANEL -->
 <div class="panel" id="scalePanel">
   <div class="panel-title">スケール表示</div>
@@ -216,6 +283,9 @@ footer code{font-family:'Space Mono',monospace;background:var(--surface);padding
     <div class="scale-note-pills" id="scaleNotePills"></div>
   </div>
 </div>
+
+  </div>
+  <div class="drawer" id="drawerListen" hidden>
 
 <!-- CHORD LISTEN PANEL -->
 <div class="panel" id="listenPanel">
@@ -239,6 +309,9 @@ footer code{font-family:'Space Mono',monospace;background:var(--surface);padding
     </div>
   </div>
 </div>
+
+  </div>
+  <div class="drawer" id="drawerRhythm" hidden>
 
 <!-- METRONOME PANEL -->
 <div class="panel" id="metronomePanel">
@@ -272,41 +345,6 @@ footer code{font-family:'Space Mono',monospace;background:var(--surface);padding
   </div>
 </div>
 
-<!-- MANUAL INPUT PANEL -->
-<div class="panel" id="inputPanel">
-  <div class="panel-title">コード直接入力</div>
-  <div class="chord-input-row">
-    <input type="text" id="chordInput" placeholder="例: Am7, Cmaj7, G7" autocomplete="off" spellcheck="false">
-    <button class="btn-sm" id="btnClear">クリア</button>
-  </div>
-  <div class="chord-info" id="chordInfo">コード名を入力、またはキーを選んでコードをクリック</div>
-</div>
-
-<!-- CONTROLS BAR -->
-<div class="controls-bar">
-  <div class="playing-bar" id="playingBar">— クリックして音を鳴らす —</div>
-  <div class="timbre-select">
-    <label for="instrumentSelect">楽器</label>
-    <select id="instrumentSelect">
-      <option value="guitar">ギター (6弦)</option>
-      <option value="bass">ベース (4弦)</option>
-    </select>
-  </div>
-  <div class="timbre-select">
-    <label for="timbreSelect">音色</label>
-    <select id="timbreSelect">
-      <option value="guitar">ギター</option>
-      <option value="bass">ベース</option>
-      <option value="piano">ピアノ</option>
-      <option value="synth">シンセ</option>
-    </select>
-  </div>
-  <div class="flip-toggle">
-    <label for="flipSwitch">低弦を上に</label>
-    <label class="switch">
-      <input type="checkbox" id="flipSwitch">
-      <span class="slider"></span>
-    </label>
   </div>
 </div>
 
@@ -1377,6 +1415,19 @@ function clearScaleHighlight(){
 
 document.getElementById('timbreSelect').addEventListener('change',function(){
   currentTimbre=this.value;
+});
+
+// ---- Drawer toggle (案4) ----
+let openDrawer=null;
+document.querySelectorAll('.toolbar-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const id=btn.dataset.drawer, d=document.getElementById(id);
+    const willOpen=(openDrawer!==d);
+    document.querySelectorAll('.drawer').forEach(x=>x.hidden=true);
+    document.querySelectorAll('.toolbar-btn').forEach(b=>b.classList.remove('active'));
+    openDrawer=null;
+    if(willOpen){d.hidden=false;btn.classList.add('active');openDrawer=d;}
+  });
 });
 
 // ============================================================
