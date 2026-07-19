@@ -99,10 +99,9 @@ h1 span{font-weight:600;color:#b8c8f0;}
 .scale-pill{background:#0f2520;color:#70c0a0;border:1px solid #2a6050;border-radius:4px;padding:2px 7px;font-family:'Space Mono',monospace;font-size:10px;}
 .scale-pill.root{background:#1a3530;color:#a0e0c0;border-color:#3a8060;}
 
-/* Scale highlight on fret cells: 上半分の半透明塗り（コード=下半分と独立なので混在時も両方見える） */
-.fret-cell.scale-tone{z-index:4;opacity:1!important;}
-.fret-cell.scale-tone::before{content:'';position:absolute;left:0;right:0;top:0;height:50%;background:rgba(80,200,140,.38);border-radius:4px 4px 0 0;pointer-events:none;}
-.fret-cell.scale-root::before{background:rgba(100,230,160,.62);box-shadow:inset 0 2px 0 rgba(255,255,255,.85);}
+/* スケール表示: 非構成音の上半分をブラックアウト（構成音はデフォルトのピッチカラーのまま） */
+.fretboard:has(.scale-tone) .fret-cell:not(.scale-tone)::before{content:'';position:absolute;left:0;right:0;top:0;height:50%;background:rgba(8,10,16,.94);border-radius:4px 4px 0 0;pointer-events:none;}
+.fret-cell.scale-root::before{content:'';position:absolute;left:0;right:0;top:0;height:50%;box-shadow:inset 0 2px 0 rgba(255,255,255,.9);border-radius:4px 4px 0 0;pointer-events:none;}
 .rbtn{font-family:'Space Mono',monospace;font-size:10px;background:var(--bg);color:var(--text-mid);border:1px solid var(--border);border-radius:6px;padding:6px 11px;cursor:pointer;transition:background .1s,color .1s,border-color .1s;}
 .rbtn:hover{background:#1a2035;color:var(--text-hi);border-color:#3a5090;}
 .rbtn.active{background:#1a2a50;color:#7ab0f0;border-color:#4a7fd5;}
@@ -156,11 +155,9 @@ h1 span{font-weight:600;color:#b8c8f0;}
 .nut-gap-cell:hover{transform:none;box-shadow:none;}
 
 /* highlight states */
-.fret-cell.dimmed{opacity:.13;filter:saturate(.2);}
-/* コードハイライト: 下半分の半透明塗り */
-.fret-cell.chord-tone{z-index:5;opacity:1!important;filter:none!important;}
-.fret-cell.chord-tone::after{content:'';position:absolute;left:0;right:0;bottom:0;height:50%;background:rgba(110,170,255,.42);border-radius:0 0 4px 4px;pointer-events:none;}
-.fret-cell.chord-root::after{background:rgba(190,130,255,.58);box-shadow:inset 0 -2px 0 rgba(255,255,255,.85);}
+/* コード表示: 非構成音（.dimmed が付く）の下半分をブラックアウト。構成音はピッチカラーのまま */
+.fret-cell.dimmed::after{content:'';position:absolute;left:0;right:0;bottom:0;height:50%;background:rgba(8,10,16,.94);border-radius:0 0 4px 4px;pointer-events:none;}
+.fret-cell.chord-root::after{content:'';position:absolute;left:0;right:0;bottom:0;height:50%;box-shadow:inset 0 -2px 0 rgba(255,255,255,.9);border-radius:0 0 4px 4px;pointer-events:none;}
 
 /* note-click same-pitch highlight */
 .fret-cell.same-pitch{box-shadow:0 0 0 2px rgba(255,210,80,.9),0 0 12px rgba(255,190,40,.35);z-index:8;opacity:1!important;filter:none!important;}
@@ -359,8 +356,7 @@ footer code{font-family:'Space Mono',monospace;background:var(--surface);padding
 </div>
 
 <footer>
-  <span style="color:#7ab0f0">■</span> コードトーン &nbsp;
-  <span style="color:#c09ae0">■</span> ルート音 &nbsp;
+  セル上半分 = スケール / 下半分 = コード（色付き = 構成音・ブラック = 非構成音・白ライン = ルート）&nbsp;／&nbsp;
   <span style="color:#ffd050">■</span> 同音（同オクターブ）&nbsp;
   <span style="color:rgba(255,208,80,.45)">■</span> 異オクターブ同名音 &nbsp;／&nbsp;
   縦線 = ナット &nbsp;／&nbsp; MIDI 中央C = <code>C4 = 60</code>
