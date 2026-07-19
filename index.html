@@ -167,6 +167,7 @@ h1 span{font-weight:600;color:#b8c8f0;}
 /* 盤面の横スクロールはセル以外の場所（フレット番号行・ドット行・隙間）のスワイプで行う */
 .fret-cell:hover{transform:scale(1.08);box-shadow:0 0 14px rgba(255,255,255,.18);z-index:10;border-color:rgba(255,255,255,.25);}
 .fret-cell.open{border-radius:4px;}
+.fret-cell.capoed{border-left:3px solid #d8a848;} /* カポ使用中の開放列（=カポ位置の音）マーク */
 .nut-gap-cell{border-left:3px solid #5a6888;background:transparent!important;cursor:default;min-height:44px;}
 .nut-gap-header{border-left:3px solid #5a6888!important;}
 .nut-gap-dot{border-left:3px solid #5a6888!important;}
@@ -242,6 +243,21 @@ footer code{font-family:'Space Mono',monospace;background:var(--surface);padding
     <select id="instrumentSelect">
       <option value="guitar">ギター (6弦)</option>
       <option value="bass">ベース (4弦)</option>
+    </select>
+  </div>
+  <div class="timbre-select">
+    <label for="capoSelect">カポ</label>
+    <select id="capoSelect">
+      <option value="0">なし</option>
+      <option value="1">1フレット</option>
+      <option value="2">2フレット</option>
+      <option value="3">3フレット</option>
+      <option value="4">4フレット</option>
+      <option value="5">5フレット</option>
+      <option value="6">6フレット</option>
+      <option value="7">7フレット</option>
+      <option value="8">8フレット</option>
+      <option value="9">9フレット</option>
     </select>
   </div>
   <div class="timbre-select">
@@ -734,6 +750,7 @@ const INSTRUMENTS={
   },
 };
 let currentInstrument='guitar';
+let capoFret=0; // カポ位置シミュレーター（0=なし）。盤面はカポ以降を物理フレット番号のまま表示
 
 function inst(){return INSTRUMENTS[currentInstrument];}
 
@@ -819,20 +836,22 @@ function buildFretboard(){
   clearTimeout(ringTimer);lastRingCell=null; // 旧DOMへの参照を破棄
 
   const nStrings=OPEN_MIDI.length;
+  const CAPO=capoFret; // OP列=カポ位置の音。フレット列はカポの次から物理番号のまま
+  const openLabel=CAPO>0?`${CAPO}F`:'OP';
   const cellMin=matchMedia('(pointer:coarse)').matches?44:36; // タッチ端末はタップしやすい幅に
-  board.style.gridTemplateColumns=`42px 46px 10px repeat(${FRET_COUNT},minmax(${cellMin}px,1fr))`;
+  board.style.gridTemplateColumns=`42px 46px 10px repeat(${FRET_COUNT-CAPO},minmax(${cellMin}px,1fr))`;
 
   // TOP: fret numbers
   board.appendChild(ec());
-  {const o=ec();o.className='fret-num';o.textContent='OP';board.appendChild(o);}
+  {const o=ec();o.className='fret-num';o.textContent=openLabel;board.appendChild(o);}
   {const g=ec();g.className='fret-num nut-gap-header';board.appendChild(g);}
-  for(let f=1;f<=FRET_COUNT;f++){const el=ec();el.className='fret-num';el.textContent=f;board.appendChild(el);}
+  for(let f=CAPO+1;f<=FRET_COUNT;f++){const el=ec();el.className='fret-num';el.textContent=f;board.appendChild(el);}
 
   // TOP: dot row
   board.appendChild(ec());
   {const o=ec();o.className='dot-cell';board.appendChild(o);}
   {const g=ec();g.className='dot-cell nut-gap-dot';board.appendChild(g);}
-  for(let f=1;f<=FRET_COUNT;f++){
+  for(let f=CAPO+1;f<=FRET_COUNT;f++){
     const cell=ec();cell.className='dot-cell';
     if(DOT_FRETS.has(f)){const d=ec();d.className='dot';cell.appendChild(d);if(DOUBLE_FRETS.has(f)){const d2=ec();d2.className='dot';cell.appendChild(d2);}}
     board.appendChild(cell);
@@ -844,24 +863,24 @@ function buildFretboard(){
     const displayName=NAME_MAP[si];
     const lbl=ec();lbl.className='string-label';lbl.textContent=displayName;board.appendChild(lbl);
 
-    // open fret
+    // open fret（カポ時はカポ位置の音が「開放」になる）
     (() => {
-      const midi=OPEN_MIDI[si],pc=midi%12;
+      const midi=OPEN_MIDI[si]+CAPO,pc=midi%12;
       const nn=NOTE_NAMES_SHARP[pc],oct=Math.floor(midi/12)-1;
       const{bg,text}=midiToColor(midi);
-      const cell=ec();cell.className='fret-cell open';cell.style.setProperty('--pc',bg);cell.style.setProperty('--pc-text',text);
+      const cell=ec();cell.className='fret-cell open'+(CAPO>0?' capoed':'');cell.style.setProperty('--pc',bg);cell.style.setProperty('--pc-text',text);
       const ne=ec();ne.className='note-name';ne.textContent=nn;
       const nu=ec();nu.className='midi-num';nu.textContent=`${oct}·${midi}`;
       const badge=ec();badge.className='role-badge';
       cell.appendChild(ne);cell.appendChild(nu);cell.appendChild(badge);
       cellMidi.set(cell,midi);pcCells[pc].push(cell);
-      attachCellTap(cell,()=>handleCellClick(cell,midi,nn,oct,displayName,0));
+      attachCellTap(cell,()=>handleCellClick(cell,midi,nn,oct,displayName,CAPO));
       board.appendChild(cell);
     })();
 
     board.appendChild(nutGap());
 
-    for(let f=1;f<=FRET_COUNT;f++){
+    for(let f=CAPO+1;f<=FRET_COUNT;f++){
       const midi=OPEN_MIDI[si]+f,pc=midi%12;
       const nn=NOTE_NAMES_SHARP[pc],oct=Math.floor(midi/12)-1;
       const{bg,text}=midiToColor(midi);
@@ -880,7 +899,7 @@ function buildFretboard(){
   board.appendChild(ec());
   {const o=ec();o.className='dot-cell';board.appendChild(o);}
   {const g=ec();g.className='dot-cell nut-gap-dot';board.appendChild(g);}
-  for(let f=1;f<=FRET_COUNT;f++){
+  for(let f=CAPO+1;f<=FRET_COUNT;f++){
     const cell=ec();cell.className='dot-cell';
     if(DOT_FRETS.has(f)){const d=ec();d.className='dot';cell.appendChild(d);if(DOUBLE_FRETS.has(f)){const d2=ec();d2.className='dot';cell.appendChild(d2);}}
     board.appendChild(cell);
@@ -888,9 +907,9 @@ function buildFretboard(){
 
   // BOTTOM: fret numbers
   board.appendChild(ec());
-  {const o=ec();o.className='fret-num';o.textContent='OP';board.appendChild(o);}
+  {const o=ec();o.className='fret-num';o.textContent=openLabel;board.appendChild(o);}
   {const g=ec();g.className='fret-num nut-gap-header';board.appendChild(g);}
-  for(let f=1;f<=FRET_COUNT;f++){const el=ec();el.className='fret-num';el.textContent=f;board.appendChild(el);}
+  for(let f=CAPO+1;f<=FRET_COUNT;f++){const el=ec();el.className='fret-num';el.textContent=f;board.appendChild(el);}
 
   if(currentHighlight)applyHighlight(currentHighlight);
   if(currentScaleKey!==null&&currentScaleType)applyScaleHighlight();
@@ -941,10 +960,17 @@ document.getElementById('instrumentSelect').addEventListener('change',function()
   buildFretboard();
 });
 
+document.getElementById('capoSelect').addEventListener('change',function(){
+  capoFret=parseInt(this.value,10)||0;
+  updateSubtitle();
+  buildFretboard();
+});
+
 function updateSubtitle(){
   const data=inst();
   const tuningNotes=data.openMidi.map(m=>NOTE_NAMES_SHARP[m%12]).join(' ');
-  document.getElementById('subtitleText').textContent=`${data.label} · Standard Tuning (${tuningNotes}) · Fret 0–${data.fretCount} · クリックで発音`;
+  const capoInfo=capoFret>0?` · Capo ${capoFret}F → (${data.openMidi.map(m=>NOTE_NAMES_SHARP[(m+capoFret)%12]).join(' ')})`:'';
+  document.getElementById('subtitleText').textContent=`${data.label} · Standard Tuning (${tuningNotes})${capoInfo} · Fret ${capoFret}–${data.fretCount} · クリックで発音`;
 }
 
 // ============================================================
