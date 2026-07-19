@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UI案 モック — Guitar Fretboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0a0c10;--surface:#10141c;--border:#1e2535;
+  --text-dim:#4a5570;--text-mid:#8a97b8;--text-hi:#d0d8f0;
+  --accent:#4a7fd5;--accent-hi:#7ab0f0;
+  --green:#3a9070;--green-hi:#70c0a0;
+  --purple:#8060c0;
+}
+body{background:var(--bg);color:var(--text-hi);font-family:'Inter',sans-serif;padding:32px 24px;display:flex;flex-direction:column;gap:48px;}
+h2{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.25em;text-transform:uppercase;color:var(--text-dim);margin-bottom:16px;}
+.case-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--text-dim);padding:4px 8px;border:1px solid var(--border);border-radius:4px;display:inline-block;margin-bottom:12px;}
+.mock-wrap{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface);}
+
+/* ============ SHARED FRETBOARD STUB ============ */
+.fb-stub{background:var(--bg);border-radius:8px;height:160px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;border:1px solid var(--border);margin:12px;}
+.fb-stub-label{font-family:'Space Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:.1em;}
+.fb-grid{display:flex;gap:3px;align-items:center;}
+.fb-string{display:flex;gap:2px;}
+.fb-cell{width:22px;height:26px;border-radius:3px;border:1px solid rgba(255,255,255,.06);}
+.fb-cell.c1{background:hsl(220,70%,14%);}
+.fb-cell.c2{background:hsl(200,62%,30%);}
+.fb-cell.c3{background:hsl(185,58%,42%);}
+.fb-cell.c4{background:hsl(45,78%,50%);}
+.fb-cell.c5{background:hsl(38,86%,64%);}
+.fb-cell.c6{background:hsl(30,70%,78%);}
+.fb-cell.hl{box-shadow:0 0 0 2px rgba(120,180,255,.8);}
+.fb-cell.hl-root{box-shadow:0 0 0 2.5px rgba(200,140,255,.9);}
+
+/* ============ SHARED COMPONENT ATOMS ============ */
+.chip{font-family:'Space Mono',monospace;font-size:10px;background:var(--bg);color:var(--text-mid);border:1px solid var(--border);border-radius:5px;padding:4px 8px;display:inline-block;white-space:nowrap;}
+.chip.active{background:#1a2a50;color:var(--accent-hi);border-color:var(--accent);}
+.chip.green{background:#0f2520;color:var(--green-hi);border-color:var(--green);}
+.chip.sm{font-size:9px;padding:3px 6px;}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--text-dim);}
+.divider{border:none;border-top:1px solid var(--border);}
+.panel-title{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--text-dim);}
+
+/* ============================================================
+   案1: タブ式
+   ============================================================ */
+.tab-layout{}
+.tab-topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);}
+.tab-topbar-left{display:flex;align-items:center;gap:12px;}
+.app-title{font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:var(--text-hi);}
+.tab-controls{display:flex;gap:6px;}
+.tab-bar{display:flex;border-bottom:1px solid var(--border);padding:0 16px;}
+.tab{font-family:'Space Mono',monospace;font-size:10px;padding:10px 16px;cursor:pointer;color:var(--text-dim);border-bottom:2px solid transparent;transition:color .15s,border-color .15s;letter-spacing:.08em;}
+.tab.active{color:var(--accent-hi);border-bottom-color:var(--accent);}
+.tab-body{padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
+
+/* ============================================================
+   案2: アコーディオン
+   ============================================================ */
+.accordion{}
+.acc-topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);}
+.acc-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);background:var(--bg);}
+.acc-header-left{display:flex;align-items:center;gap:8px;}
+.acc-header .panel-title{color:var(--text-mid);}
+.acc-header.open .panel-title{color:var(--accent-hi);}
+.acc-chevron{font-size:10px;color:var(--text-dim);transition:transform .2s;}
+.acc-header.open .acc-chevron{transform:rotate(180deg);color:var(--accent-hi);}
+.acc-body{padding:12px 14px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--border);}
+.acc-body.closed{display:none;}
+
+/* ============================================================
+   案3: サイドバー
+   ============================================================ */
+.sidebar-layout{display:flex;min-height:380px;}
+.sidebar{width:220px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.sidebar-top{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.sidebar-nav{display:flex;flex-direction:column;}
+.sidebar-section{padding:8px 14px;display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--border);}
+.sidebar-section-label{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--text-dim);margin-bottom:2px;}
+.sidebar-main{flex:1;display:flex;flex-direction:column;}
+.sidebar-fb-area{flex:1;padding:12px;display:flex;flex-direction:column;gap:8px;}
+.sidebar-playing-bar{font-family:'Space Mono',monospace;font-size:10px;color:var(--text-dim);padding:0 4px;}
+
+/* ============================================================
+   案4: モーダル/ドロワー
+   ============================================================ */
+.modal-layout{display:flex;flex-direction:column;}
+.modal-topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);}
+.toolbar{display:flex;gap:6px;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--bg);}
+.toolbar-btn{font-family:'Space Mono',monospace;font-size:10px;background:var(--surface);color:var(--text-mid);border:1px solid var(--border);border-radius:6px;padding:6px 10px;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;}
+.toolbar-btn.active{background:#1a2a50;color:var(--accent-hi);border-color:var(--accent);}
+.toolbar-btn .tb-icon{font-size:12px;}
+.drawer{margin:0 14px 0;border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;padding:12px;background:var(--surface);display:flex;flex-direction:column;gap:8px;}
+.drawer-title{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent-hi);margin-bottom:2px;}
+.modal-fb-area{padding:12px 14px;display:flex;flex-direction:column;gap:6px;}
+</style>
+</head>
+<body>
+
+<!-- ========================================================
+     案1: タブ式
+     ======================================================== -->
+<div>
+  <h2>UI改善案 比較モック</h2>
+  <div class="case-label">案1 — タブ式</div>
+  <div class="mock-wrap tab-layout">
+    <div class="tab-topbar">
+      <div class="tab-topbar-left">
+        <span class="app-title">Fretboard</span>
+        <div class="row">
+          <span class="chip sm">ギター (6弦)</span>
+          <span class="chip sm">音色: ギター</span>
+          <span class="chip sm active">低弦 上</span>
+        </div>
+      </div>
+      <div class="tab-controls">
+        <span class="chip sm">♪ C4 — 弦e フレット3</span>
+      </div>
+    </div>
+
+    <!-- フレットボードスタブ -->
+    <div class="fb-stub" style="height:130px;margin:12px 12px 0;">
+      <div class="fb-grid">
+        <div class="fb-string">
+          <div class="fb-cell c6 hl"></div><div class="fb-cell c6"></div><div class="fb-cell c6"></div><div class="fb-cell c6 hl"></div><div class="fb-cell c6"></div><div class="fb-cell c6 hl"></div><div class="fb-cell c6"></div>
+        </div>
+      </div>
+      <div class="fb-grid">
+        <div class="fb-string">
+          <div class="fb-cell c5"></div><div class="fb-cell c5 hl"></div><div class="fb-cell c5"></div><div class="fb-cell c5"></div><div class="fb-cell c5 hl-root"></div><div class="fb-cell c5"></div><div class="fb-cell c5 hl"></div>
+        </div>
+      </div>
+      <div class="fb-grid">
+        <div class="fb-string">
+          <div class="fb-cell c4 hl"></div><div class="fb-cell c4"></div><div class="fb-cell c4 hl"></div><div class="fb-cell c4"></div><div class="fb-cell c4"></div><div class="fb-cell c4 hl"></div><div class="fb-cell c4"></div>
+        </div>
+      </div>
+      <div class="fb-grid">
+        <div class="fb-string">
+          <div class="fb-cell c3"></div><div class="fb-cell c3 hl"></div><div class="fb-cell c3"></div><div class="fb-cell c3 hl"></div><div class="fb-cell c3"></div><div class="fb-cell c3"></div><div class="fb-cell c3 hl-root"></div>
+        </div>
+      </div>
+      <div class="fb-grid">
+        <div class="fb-string">
+          <div class="fb-cell c2 hl-root"></div><div class="fb-cell c2"></div><div class="fb-cell c2 hl"></div><div class="fb-cell c2"></div><div class="fb-cell c2 hl"></div><div class="fb-cell c2"></div><div class="fb-cell c2"></div>
+        </div>
+      </div>
+      <div class="fb-grid">
+        <div class="fb-string">
+          <div class="fb-cell c1 hl"></div><div class="fb-cell c1"></div><div class="fb-cell c1"></div><div class="fb-cell c1 hl"></div><div class="fb-cell c1"></div><div class="fb-cell c1 hl"></div><div class="fb-cell c1"></div>
+        </div>
+      </div>
+      <div class="fb-stub-label">フレットボード</div>
+    </div>
+
+    <!-- タブ -->
+    <div class="tab-bar">
+      <div class="tab active">コード理論</div>
+      <div class="tab">スケール</div>
+      <div class="tab">試聴</div>
+      <div class="tab">練習・リズム</div>
+    </div>
+    <div class="tab-body">
+      <!-- コード理論タブの中身 -->
+      <div class="row">
+        <span class="label">キー</span>
+        <div class="row">
+          <span class="chip sm active">C</span><span class="chip sm">G</span><span class="chip sm">D</span><span class="chip sm">A</span><span class="chip sm">E</span><span class="chip sm">F</span>
+        </div>
+        <span class="chip sm active">Major</span><span class="chip sm">Minor</span>
+      </div>
+      <hr class="divider">
+      <div class="row">
+        <span class="label">三和音</span>
+        <div class="row">
+          <span class="chip sm active">I C</span><span class="chip sm">II Dm</span><span class="chip sm">III Em</span><span class="chip sm">IV F</span><span class="chip sm">V G</span><span class="chip sm">VI Am</span><span class="chip sm">VII Bdim</span>
+        </div>
+      </div>
+      <div class="row">
+        <span class="label">四和音</span>
+        <div class="row">
+          <span class="chip sm active">I Cmaj7</span><span class="chip sm">II Dm7</span><span class="chip sm">III Em7</span><span class="chip sm">IV Fmaj7</span><span class="chip sm">V G7</span><span class="chip sm">VI Am7</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:8px;padding:0 4px;">
+    ✓ 常に1タブだけ表示 → スクロールが減る<br>
+    ✓ 操作文脈で分類（理論 / スケール / 試聴 / 練習）<br>
+    △ タブ切り替えで複数パネルを同時に見られない
+  </p>
+</div>
+
+<!-- ========================================================
+     案2: アコーディオン式
+     ======================================================== -->
+<div>
+  <div class="case-label">案2 — アコーディオン (折りたたみ)</div>
+  <div class="mock-wrap accordion">
+    <div class="acc-topbar">
+      <span class="app-title">Fretboard</span>
+      <div class="row"><span class="chip sm">ギター</span><span class="chip sm">音色: ギター</span></div>
+    </div>
+
+    <!-- フレットボードは常に表示 -->
+    <div class="fb-stub" style="height:100px;margin:10px;">
+      <div class="row">
+        <div class="fb-cell c4 hl-root"></div><div class="fb-cell c4"></div><div class="fb-cell c4 hl"></div><div class="fb-cell c4"></div><div class="fb-cell c4 hl"></div><div class="fb-cell c4"></div><div class="fb-cell c4 hl"></div><div class="fb-cell c4"></div><div class="fb-cell c4 hl"></div><div class="fb-cell c4"></div>
+      </div>
+      <div class="row">
+        <div class="fb-cell c3"></div><div class="fb-cell c3 hl"></div><div class="fb-cell c3"></div><div class="fb-cell c3 hl"></div><div class="fb-cell c3"></div><div class="fb-cell c3 hl-root"></div><div class="fb-cell c3"></div><div class="fb-cell c3 hl"></div><div class="fb-cell c3"></div><div class="fb-cell c3 hl"></div>
+      </div>
+      <div class="row">
+        <div class="fb-cell c2 hl"></div><div class="fb-cell c2"></div><div class="fb-cell c2 hl"></div><div class="fb-cell c2"></div><div class="fb-cell c2 hl"></div><div class="fb-cell c2"></div><div class="fb-cell c2 hl-root"></div><div class="fb-cell c2"></div><div class="fb-cell c2 hl"></div><div class="fb-cell c2"></div>
+      </div>
+      <div class="fb-stub-label">フレットボード（常時表示）</div>
+    </div>
+
+    <!-- 開いているパネル -->
+    <div class="acc-header open">
+      <div class="acc-header-left"><span class="panel-title">コード理論</span><span class="chip sm active" style="margin-left:6px;">C Major · Cmaj7</span></div>
+      <span class="acc-chevron">▲</span>
+    </div>
+    <div class="acc-body">
+      <div class="row">
+        <span class="chip sm active">C</span><span class="chip sm">G</span><span class="chip sm">D</span><span class="chip sm">F</span><span class="chip sm">Am</span>
+        <span class="chip sm active">Major</span><span class="chip sm">Minor</span>
+      </div>
+      <div class="row">
+        <span class="label">三和音</span>
+        <span class="chip sm active">I C</span><span class="chip sm">II Dm</span><span class="chip sm">IV F</span><span class="chip sm">V G</span><span class="chip sm">VI Am</span>
+      </div>
+    </div>
+
+    <!-- 閉じているパネル -->
+    <div class="acc-header">
+      <div class="acc-header-left"><span class="panel-title">スケール</span></div>
+      <span class="acc-chevron">▼</span>
+    </div>
+    <div class="acc-body closed"></div>
+
+    <div class="acc-header">
+      <div class="acc-header-left"><span class="panel-title">試聴</span></div>
+      <span class="acc-chevron">▼</span>
+    </div>
+    <div class="acc-body closed"></div>
+
+    <div class="acc-header">
+      <div class="acc-header-left"><span class="panel-title">練習・リズム</span></div>
+      <span class="acc-chevron">▼</span>
+    </div>
+    <div class="acc-body closed"></div>
+  </div>
+  <p style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:8px;padding:0 4px;">
+    ✓ 全パネルが常に存在し、必要な時だけ開く<br>
+    ✓ フレットボードが常に見える<br>
+    △ 複数開くと結局縦に長くなる
+  </p>
+</div>
+
+<!-- ========================================================
+     案3: サイドバー
+     ======================================================== -->
+<div>
+  <div class="case-label">案3 — サイドバー + メインエリア</div>
+  <div class="mock-wrap sidebar-layout">
+    <!-- サイドバー -->
+    <div class="sidebar">
+      <div class="sidebar-top">
+        <span class="app-title" style="font-size:11px;">Fretboard</span>
+        <span class="chip sm">ギター</span>
+      </div>
+      <div class="sidebar-nav">
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">楽器 / 音色</div>
+          <div class="row"><span class="chip sm active">ギター</span><span class="chip sm">ベース</span></div>
+          <div class="row"><span class="chip sm active">Guitar</span><span class="chip sm">Piano</span><span class="chip sm">Synth</span></div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">コード理論</div>
+          <div class="row">
+            <span class="chip sm active">C</span><span class="chip sm">G</span><span class="chip sm">Am</span>
+          </div>
+          <div class="row"><span class="chip sm active">Cmaj7</span><span class="chip sm">Dm7</span><span class="chip sm">G7</span></div>
+          <div style="height:2px;background:var(--border);border-radius:1px;margin:2px 0;"></div>
+          <div class="row"><span class="chip sm green">C メジャー</span></div>
+          <div class="row"><span class="chip sm green">ペンタ</span><span class="chip sm green">ブルース</span></div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">試聴</div>
+          <div class="row">
+            <span class="chip sm">≋</span><span class="chip sm active">↑</span><span class="chip sm">⇅</span><span class="chip sm">⁂</span>
+          </div>
+          <div class="row"><span class="label">BPM</span><span class="chip sm">120</span></div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">リズム</div>
+          <div class="row"><span class="chip sm">▶</span><span class="label">BPM</span><span class="chip sm">120</span></div>
+          <div class="row"><span class="chip sm active">ロック</span><span class="chip sm">ロカビリー</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- メインエリア -->
+    <div class="sidebar-main">
+      <div class="sidebar-fb-area">
+        <div class="sidebar-playing-bar">♪ C4 — 弦e フレット3 (MIDI 60)</div>
+        <div class="fb-stub" style="flex:1;height:auto;min-height:200px;margin:0;">
+          <div class="fb-grid">
+            <div class="fb-string">
+              <div class="fb-cell c6 hl"></div><div class="fb-cell c6"></div><div class="fb-cell c6"></div><div class="fb-cell c6 hl"></div><div class="fb-cell c6"></div><div class="fb-cell c6 hl"></div><div class="fb-cell c6"></div><div class="fb-cell c6"></div><div class="fb-cell c6 hl"></div>
+            </div>
+          </div>
+          <div class="fb-grid">
+            <div class="fb-string">
+              <div class="fb-cell c5"></div><div class="fb-cell c5 hl"></div><div class="fb-cell c5"></div><div class="fb-cell c5"></div><div class="fb-cell c5 hl-root"></div><div class="fb-cell c5"></div><div class="fb-cell c5 hl"></div><div class="fb-cell c5"></div><div class="fb-cell c5"></div>
+            </div>
+          </div>
+          <div class="fb-grid">
+            <div class="fb-string">
+              <div class="fb-cell c4 hl"></div><div class="fb-cell c4"></div><div class="fb-cell c4 hl"></div><div class="fb-cell c4"></div><div class="fb-cell c4"></div><div class="fb-cell c4 hl"></div><div class="fb-cell c4"></div><div class="fb-cell c4 hl"></div><div class="fb-cell c4"></div>
+            </div>
+          </div>
+          <div class="fb-grid">
+            <div class="fb-string">
+              <div class="fb-cell c3"></div><div class="fb-cell c3 hl"></div><div class="fb-cell c3"></div><div class="fb-cell c3 hl"></div><div class="fb-cell c3"></div><div class="fb-cell c3"></div><div class="fb-cell c3 hl-root"></div><div class="fb-cell c3"></div><div class="fb-cell c3"></div>
+            </div>
+          </div>
+          <div class="fb-grid">
+            <div class="fb-string">
+              <div class="fb-cell c2 hl-root"></div><div class="fb-cell c2"></div><div class="fb-cell c2 hl"></div><div class="fb-cell c2"></div><div class="fb-cell c2 hl"></div><div class="fb-cell c2"></div><div class="fb-cell c2"></div><div class="fb-cell c2 hl"></div><div class="fb-cell c2"></div>
+            </div>
+          </div>
+          <div class="fb-grid">
+            <div class="fb-string">
+              <div class="fb-cell c1 hl"></div><div class="fb-cell c1"></div><div class="fb-cell c1"></div><div class="fb-cell c1 hl"></div><div class="fb-cell c1"></div><div class="fb-cell c1 hl"></div><div class="fb-cell c1"></div><div class="fb-cell c1"></div><div class="fb-cell c1 hl"></div>
+            </div>
+          </div>
+          <div class="fb-stub-label">フレットボード（常時・大きく表示）</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:8px;padding:0 4px;">
+    ✓ フレットボードを最大化できる<br>
+    ✓ 全機能が常に横に見える<br>
+    △ 画面幅が必要 / モバイルでは厳しい
+  </p>
+</div>
+
+<!-- ========================================================
+     案4: モーダル/ドロワー
+     ======================================================== -->
+<div>
+  <div class="case-label">案4 — ツールバー + ドロワー</div>
+  <div class="mock-wrap modal-layout">
+    <div class="modal-topbar">
+      <span class="app-title">Fretboard</span>
+      <div class="row">
+        <span class="chip sm">ギター</span>
+        <span class="chip sm">Guitar</span>
+        <span class="chip sm">♪ C4 — e弦 3f</span>
+      </div>
+    </div>
+
+    <!-- ツールバー: ボタンを押すとドロワーが出る -->
+    <div class="toolbar">
+      <button class="toolbar-btn"><span class="tb-icon">🎸</span> 楽器・音色</button>
+      <button class="toolbar-btn active"><span class="tb-icon">♩</span> コード <span class="chip sm active" style="margin-left:2px;">Cmaj7</span></button>
+      <button class="toolbar-btn"><span class="tb-icon">〜</span> スケール</button>
+      <button class="toolbar-btn"><span class="tb-icon">▶</span> 試聴</button>
+      <button class="toolbar-btn"><span class="tb-icon">🥁</span> リズム <span class="chip sm" style="margin-left:2px;">■</span></button>
+    </div>
+
+    <!-- コードドロワー（開いている状態） -->
+    <div class="drawer">
+      <div class="drawer-title">コード理論 — Key of C Major</div>
+      <div class="row">
+        <span class="chip sm active">C</span><span class="chip sm">G</span><span class="chip sm">D</span><span class="chip sm">F</span><span class="chip sm">Bb</span>
+        <span class="chip sm active">Major</span><span class="chip sm">Minor</span>
+      </div>
+      <div class="row">
+        <span class="label">三和音</span>
+        <span class="chip sm active">I C</span><span class="chip sm">II Dm</span><span class="chip sm">III Em</span><span class="chip sm">IV F</span><span class="chip sm">V G</span><span class="chip sm">VI Am</span>
+      </div>
+      <div class="row">
+        <span class="label">四和音</span>
+        <span class="chip sm active">Imaj7</span><span class="chip sm">IIm7</span><span class="chip sm">IVmaj7</span><span class="chip sm">V7</span><span class="chip sm">VIm7</span>
+      </div>
+    </div>
+
+    <!-- フレットボード -->
+    <div class="modal-fb-area">
+      <div class="fb-stub" style="height:150px;">
+        <div class="fb-grid">
+          <div class="fb-string">
+            <div class="fb-cell c6 hl"></div><div class="fb-cell c6"></div><div class="fb-cell c6 hl"></div><div class="fb-cell c6"></div><div class="fb-cell c6 hl"></div><div class="fb-cell c6"></div><div class="fb-cell c6"></div><div class="fb-cell c6 hl"></div><div class="fb-cell c6"></div><div class="fb-cell c6 hl"></div>
+          </div>
+        </div>
+        <div class="fb-grid">
+          <div class="fb-string">
+            <div class="fb-cell c4"></div><div class="fb-cell c4 hl"></div><div class="fb-cell c4"></div><div class="fb-cell c4 hl-root"></div><div class="fb-cell c4"></div><div class="fb-cell c4 hl"></div><div class="fb-cell c4"></div><div class="fb-cell c4 hl"></div><div class="fb-cell c4"></div><div class="fb-cell c4"></div>
+          </div>
+        </div>
+        <div class="fb-grid">
+          <div class="fb-string">
+            <div class="fb-cell c3 hl"></div><div class="fb-cell c3"></div><div class="fb-cell c3 hl"></div><div class="fb-cell c3"></div><div class="fb-cell c3 hl"></div><div class="fb-cell c3"></div><div class="fb-cell c3 hl-root"></div><div class="fb-cell c3"></div><div class="fb-cell c3 hl"></div><div class="fb-cell c3"></div>
+          </div>
+        </div>
+        <div class="fb-grid">
+          <div class="fb-string">
+            <div class="fb-cell c2 hl-root"></div><div class="fb-cell c2"></div><div class="fb-cell c2 hl"></div><div class="fb-cell c2"></div><div class="fb-cell c2 hl"></div><div class="fb-cell c2"></div><div class="fb-cell c2"></div><div class="fb-cell c2 hl"></div><div class="fb-cell c2"></div><div class="fb-cell c2 hl"></div>
+          </div>
+        </div>
+        <div class="fb-stub-label">フレットボード</div>
+      </div>
+    </div>
+  </div>
+  <p style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:8px;padding:0 4px;">
+    ✓ デフォルトがすっきり / 使うものだけ開く<br>
+    ✓ フレットボードの面積が一番大きい<br>
+    ✓ モバイルでも動く<br>
+    △ 機能の存在に気づきにくい可能性
+  </p>
+</div>
+
+</body>
+</html>
