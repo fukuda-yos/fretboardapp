@@ -19,6 +19,8 @@
    例外は PWA 付帯ファイル（manifest.webmanifest / sw.js / icons/）のみ。
 4. 編集後は毎回構文チェックを実行:
    `sed -n '/<script>/,/<\/script>/p' index.html | sed '1d;$d' > /tmp/check.js && node --check /tmp/check.js`
+   PowerShell 環境では（**UTF-8 指定を忘れない**。忘れると日本語文字列が化けて誤検出する）:
+   `$h = Get-Content index.html -Raw -Encoding UTF8; [regex]::Match($h,'(?s)<script>\r?\n(.*)\r?\n</script>').Groups[1].Value | Out-File $env:TEMP\check.js -Encoding utf8; node --check $env:TEMP\check.js`
 5. **段階的に進める**: 大きな変更はフェーズ分割し、各フェーズ後にユーザーへ動作確認を依頼する。
    実装前に優先順位を確認する。頼まれていない機能を勝手に足さない。
 6. 変更のたびに `HANDOFF.md` の「変更履歴」と「回帰テストチェックリスト」を更新し、
