@@ -9,11 +9,21 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{--bg:#0a0c10;--surface:#10141c;--border:#1e2535;--text-dim:#4a5570;--text-mid:#8a97b8;--text-hi:#d0d8f0;}
 body{background:var(--bg);color:var(--text-hi);font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:28px 20px 56px;gap:20px;}
-header{text-align:center;}
-.eyebrow{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.25em;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;}
-h1{font-size:clamp(20px,4vw,32px);font-weight:300;letter-spacing:.04em;}
+/* トップバー（Phase 2）: 左=タイトル / 右=ステータスチップ。狭幅では自然に折り返す */
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:10px 24px;flex-wrap:wrap;width:100%;max-width:1200px;text-align:left;}
+.header-titles{display:flex;flex-direction:column;}
+.eyebrow{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.25em;color:var(--text-dim);text-transform:uppercase;margin-bottom:4px;}
+h1{font-size:clamp(18px,3vw,24px);font-weight:300;letter-spacing:.04em;}
 h1 span{font-weight:600;color:#b8c8f0;}
-.subtitle{margin-top:5px;font-size:12px;color:var(--text-dim);}
+.subtitle{margin-top:3px;font-size:12px;color:var(--text-dim);}
+.header-status{display:flex;flex-direction:column;align-items:flex-end;gap:6px;margin-left:auto;}
+.status-chips{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+.status-chip{font-family:'Space Mono',monospace;font-size:11px;border:1px solid var(--border);border-radius:999px;padding:4px 12px;color:var(--text-mid);background:var(--surface);white-space:nowrap;}
+.chord-chip{color:#7ab0f0;border-color:#2a3a60;}
+.chord-chip:empty{display:none;}
+.metro-chip{display:none;color:#7ad0a0;border-color:#2a7050;}
+.metro-chip.on{display:inline-block;animation:metroPulse 1s ease-in-out infinite;}
+@keyframes metroPulse{50%{opacity:.55;}}
 .legend{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;}
 .legend-label{font-size:11px;font-family:'Space Mono',monospace;color:var(--text-dim);}
 .gradient-bar{width:200px;height:8px;border-radius:4px;border:1px solid var(--border);background:linear-gradient(to right,hsl(210,72%,52%),hsl(185,60%,48%),hsl(140,55%,45%),hsl(90,60%,50%),hsl(55,85%,58%),hsl(30,90%,56%),hsl(0,78%,50%));}
@@ -123,7 +133,7 @@ h1 span{font-weight:600;color:#b8c8f0;}
 .chord-info .err{color:#d57070;}
 
 /* CONTROLS BAR */
-.controls-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:space-between;width:100%;max-width:1200px;}
+.controls-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:flex-start;width:100%;max-width:1200px;}
 .playing-bar{font-family:'Space Mono',monospace;font-size:12px;color:var(--text-dim);letter-spacing:.06em;min-height:18px;}
 .playing-bar.active{color:#7dd6f0;}
 .flip-toggle{display:flex;align-items:center;gap:8px;}
@@ -185,9 +195,18 @@ footer code{font-family:'Space Mono',monospace;background:var(--surface);padding
 </head>
 <body>
 <header>
-  <p class="eyebrow">Guitar Reference</p>
-  <h1>Fretboard <span>Pitch Map</span></h1>
-  <p class="subtitle" id="subtitleText">Standard Tuning (E A D G B E) · Fret 0–24 · クリックで発音</p>
+  <div class="header-titles">
+    <p class="eyebrow">Guitar Reference</p>
+    <h1>Fretboard <span>Pitch Map</span></h1>
+    <p class="subtitle" id="subtitleText">Standard Tuning (E A D G B E) · Fret 0–24 · クリックで発音</p>
+  </div>
+  <div class="header-status">
+    <div class="status-chips">
+      <span class="status-chip chord-chip" id="chordChip"></span>
+      <span class="status-chip metro-chip" id="metroChip">🥁 リズム再生中</span>
+    </div>
+    <div class="playing-bar" id="playingBar">— クリックして音を鳴らす —</div>
+  </div>
 </header>
 
 <div class="legend">
@@ -215,7 +234,6 @@ footer code{font-family:'Space Mono',monospace;background:var(--surface);padding
 
 <!-- CONTROLS BAR -->
 <div class="controls-bar">
-  <div class="playing-bar" id="playingBar">— クリックして音を鳴らす —</div>
   <div class="timbre-select">
     <label for="instrumentSelect">楽器</label>
     <select id="instrumentSelect">
@@ -967,6 +985,7 @@ function selectChord(parsed){
   showChordInfo(parsed);
   setListenChord(parsed);
   cancelArp();
+  document.getElementById('chordChip').textContent=(parsed&&!parsed.error)?`♩ ${parsed.rootStr}${parsed.quality}`:''; // トップバーの選択中コードチップ（空なら:emptyで非表示）
 }
 
 // ============================================================
@@ -1294,6 +1313,7 @@ function startMetronome(){
   metroNextTime=ctx.currentTime+0.05;
   metroToggleBtn.textContent='■';
   metroToggleBtn.classList.add('running');
+  document.getElementById('metroChip').classList.add('on');
   metroSchedulerTimer=setInterval(metroScheduler,25);
 }
 
@@ -1303,6 +1323,7 @@ function stopMetronome(){
   metroSchedulerTimer=null;
   metroToggleBtn.textContent='▶';
   metroToggleBtn.classList.remove('running');
+  document.getElementById('metroChip').classList.remove('on');
   metroBeatRow.querySelectorAll('.beat-dot').forEach(d=>d.classList.remove('tick'));
 }
 
