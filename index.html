@@ -143,7 +143,7 @@ h1 span{font-weight:600;color:#b8c8f0;}
 .dot{width:6px;height:6px;border-radius:50%;background:var(--border);}
 .string-label{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;color:var(--text-mid);display:flex;align-items:center;justify-content:center;}
 .fret-cell{border-radius:4px;padding:5px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:44px;border:1px solid rgba(255,255,255,.04);cursor:pointer;user-select:none;position:relative;transition:transform .08s,box-shadow .08s,filter .08s,opacity .15s;touch-action:none;}
-/* ↑touch-action:none — セル上のジェスチャーは全て発音(タップ/グリッサンド)。盤面の横移動は #boardScroll で行う */
+/* ↑touch-action:none — セル上のジェスチャーは全て発音(タップ/グリッサンド)。盤面の横移動はセル以外のスワイプで行う */
 /* タッチ端末: セル間に緩衝帯を作り隣接誤タップを減らす（セル幅44px化はbuildFretboard側） */
 @media(pointer:coarse){
   .fretboard{column-gap:3px;}
