@@ -154,8 +154,8 @@ h1 span{font-weight:600;color:#b8c8f0;}
 /* FRETBOARD */
 .board-wrapper{width:100%;max-width:1200px;overflow-x:auto;padding-bottom:4px;}
 .fretboard{display:grid;grid-template-columns:42px 46px 10px repeat(24,minmax(36px,1fr));row-gap:3px;min-width:800px;padding-right:5px;/* 右端セルの hover/ringing scale はみ出しを吸収（無いと一瞬スクロールバーが出る） */}
-.fret-num{font-family:'Space Mono',monospace;font-size:9px;color:var(--text-dim);text-align:center;padding:3px 0;}
-/* カポ時のフレット番号2段表示: 上段=カポ基準(主) / 下段=物理番号(従) */
+.fret-num{font-family:'Space Mono',monospace;font-size:9px;color:var(--text-mid);text-align:center;padding:3px 0;}
+/* カポ時のフレット番号2段表示: 内側(盤面側)=カポ基準(主・明) / 外側=物理番号(従・暗) */
 .fn-rel{display:block;color:var(--text-mid);}
 .fn-phys{display:block;font-size:8px;color:#39435c;}
 .dot-cell{display:flex;align-items:center;justify-content:center;padding:2px 0 4px;gap:3px;}
@@ -840,25 +840,27 @@ function buildFretboard(){
 
   const nStrings=OPEN_MIDI.length;
   const CAPO=capoFret; // OP列=カポ位置の音。フレット列はカポの次から
-  // フレット番号セル: カポ時は「カポ基準0〜(上段・主表示) / 物理番号(下段)」の2段表示
-  const fnum=(rel,phys)=>{
+  // フレット番号セル: カポ時は2段表示。内側(盤面側)=カポ基準0〜、外側=物理番号
+  // relFirst=true でカポ基準が上（盤面より下の行用）、false で物理が上（盤面より上の行用）
+  const fnum=(rel,phys,relFirst)=>{
     const el=ec();el.className='fret-num';
     if(CAPO>0){
       const r=ec();r.className='fn-rel';r.textContent=rel;
       const p=ec();p.className='fn-phys';p.textContent=phys;
-      el.appendChild(r);el.appendChild(p);
+      if(relFirst){el.appendChild(r);el.appendChild(p);}
+      else{el.appendChild(p);el.appendChild(r);}
     }else el.textContent=rel;
     return el;
   };
-  const openNum=()=>CAPO>0?fnum(0,`${CAPO}F`):fnum('OP');
+  const openNum=(relFirst)=>CAPO>0?fnum(0,`${CAPO}F`,relFirst):fnum('OP');
   const cellMin=matchMedia('(pointer:coarse)').matches?44:36; // タッチ端末はタップしやすい幅に
   board.style.gridTemplateColumns=`42px 46px 10px repeat(${FRET_COUNT-CAPO},minmax(${cellMin}px,1fr))`;
 
-  // TOP: fret numbers
+  // TOP: fret numbers（盤面より上 → 物理が外側=上、カポ基準が内側=下）
   board.appendChild(ec());
-  board.appendChild(openNum());
+  board.appendChild(openNum(false));
   {const g=ec();g.className='fret-num nut-gap-header';board.appendChild(g);}
-  for(let f=CAPO+1;f<=FRET_COUNT;f++)board.appendChild(fnum(f-CAPO,f));
+  for(let f=CAPO+1;f<=FRET_COUNT;f++)board.appendChild(fnum(f-CAPO,f,false));
 
   // TOP: dot row
   board.appendChild(ec());
@@ -919,11 +921,11 @@ function buildFretboard(){
     board.appendChild(cell);
   }
 
-  // BOTTOM: fret numbers
+  // BOTTOM: fret numbers（盤面より下 → カポ基準が内側=上、物理が外側=下）
   board.appendChild(ec());
-  board.appendChild(openNum());
+  board.appendChild(openNum(true));
   {const g=ec();g.className='fret-num nut-gap-header';board.appendChild(g);}
-  for(let f=CAPO+1;f<=FRET_COUNT;f++)board.appendChild(fnum(f-CAPO,f));
+  for(let f=CAPO+1;f<=FRET_COUNT;f++)board.appendChild(fnum(f-CAPO,f,true));
 
   if(currentHighlight)applyHighlight(currentHighlight);
   if(currentScaleKey!==null&&currentScaleType)applyScaleHighlight();
