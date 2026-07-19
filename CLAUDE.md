@@ -1,7 +1,8 @@
 # Fretboard Pitch Map — プロジェクト規約（Claude Code 用）
 
 ギター/ベースのフレットボード可視化・コード理論学習・練習支援アプリ。
-**単一の fretboard.html（HTML/CSS/JS 約1,390行）で完結**。ビルドツールなし。
+**単一の index.html（HTML/CSS/JS 約1,390行）で完結**。ビルドツールなし。
+（旧ファイル名 fretboard.html。GitHub Pages 公開のため 2026-07-19 にリネーム）
 経緯・詳細仕様・ロードマップ・回帰テスト表は `HANDOFF.md` を必ず併読すること。
 
 ## 絶対ルール
@@ -14,10 +15,10 @@
 2. **既存の id・関数名・グローバル変数名・CSSクラス名を変更しない。**
    リスナーは body 末尾のスクリプトで一度だけ張られる。
    UI再構成は「要素の移動」であり「再生成」ではない。
-3. **シングルファイル原則**: 本体は fretboard.html 1枚。外部ライブラリ・ビルドツール禁止。
+3. **シングルファイル原則**: 本体は index.html 1枚。外部ライブラリ・ビルドツール禁止。
    例外は PWA 付帯ファイル（manifest.webmanifest / sw.js / icons/）のみ。
 4. 編集後は毎回構文チェックを実行:
-   `sed -n '/<script>/,/<\/script>/p' fretboard.html | sed '1d;$d' > /tmp/check.js && node --check /tmp/check.js`
+   `sed -n '/<script>/,/<\/script>/p' index.html | sed '1d;$d' > /tmp/check.js && node --check /tmp/check.js`
 5. **段階的に進める**: 大きな変更はフェーズ分割し、各フェーズ後にユーザーへ動作確認を依頼する。
    実装前に優先順位を確認する。頼まれていない機能を勝手に足さない。
 6. 変更のたびに `HANDOFF.md` の「変更履歴」と「回帰テストチェックリスト」を更新し、
