@@ -155,6 +155,9 @@ h1 span{font-weight:600;color:#b8c8f0;}
 .board-wrapper{width:100%;max-width:1200px;overflow-x:auto;padding-bottom:4px;}
 .fretboard{display:grid;grid-template-columns:42px 46px 10px repeat(24,minmax(36px,1fr));row-gap:3px;min-width:800px;padding-right:5px;/* 右端セルの hover/ringing scale はみ出しを吸収（無いと一瞬スクロールバーが出る） */}
 .fret-num{font-family:'Space Mono',monospace;font-size:9px;color:var(--text-dim);text-align:center;padding:3px 0;}
+/* カポ時のフレット番号2段表示: 上段=カポ基準(主) / 下段=物理番号(従) */
+.fn-rel{display:block;color:var(--text-mid);}
+.fn-phys{display:block;font-size:8px;color:#39435c;}
 .dot-cell{display:flex;align-items:center;justify-content:center;padding:2px 0 4px;gap:3px;}
 .dot{width:6px;height:6px;border-radius:50%;background:var(--border);}
 .string-label{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;color:var(--text-mid);display:flex;align-items:center;justify-content:center;}
@@ -836,16 +839,26 @@ function buildFretboard(){
   clearTimeout(ringTimer);lastRingCell=null; // 旧DOMへの参照を破棄
 
   const nStrings=OPEN_MIDI.length;
-  const CAPO=capoFret; // OP列=カポ位置の音。フレット列はカポの次から物理番号のまま
-  const openLabel=CAPO>0?`${CAPO}F`:'OP';
+  const CAPO=capoFret; // OP列=カポ位置の音。フレット列はカポの次から
+  // フレット番号セル: カポ時は「カポ基準0〜(上段・主表示) / 物理番号(下段)」の2段表示
+  const fnum=(rel,phys)=>{
+    const el=ec();el.className='fret-num';
+    if(CAPO>0){
+      const r=ec();r.className='fn-rel';r.textContent=rel;
+      const p=ec();p.className='fn-phys';p.textContent=phys;
+      el.appendChild(r);el.appendChild(p);
+    }else el.textContent=rel;
+    return el;
+  };
+  const openNum=()=>CAPO>0?fnum(0,`${CAPO}F`):fnum('OP');
   const cellMin=matchMedia('(pointer:coarse)').matches?44:36; // タッチ端末はタップしやすい幅に
   board.style.gridTemplateColumns=`42px 46px 10px repeat(${FRET_COUNT-CAPO},minmax(${cellMin}px,1fr))`;
 
   // TOP: fret numbers
   board.appendChild(ec());
-  {const o=ec();o.className='fret-num';o.textContent=openLabel;board.appendChild(o);}
+  board.appendChild(openNum());
   {const g=ec();g.className='fret-num nut-gap-header';board.appendChild(g);}
-  for(let f=CAPO+1;f<=FRET_COUNT;f++){const el=ec();el.className='fret-num';el.textContent=f;board.appendChild(el);}
+  for(let f=CAPO+1;f<=FRET_COUNT;f++)board.appendChild(fnum(f-CAPO,f));
 
   // TOP: dot row
   board.appendChild(ec());
@@ -874,7 +887,7 @@ function buildFretboard(){
       const badge=ec();badge.className='role-badge';
       cell.appendChild(ne);cell.appendChild(nu);cell.appendChild(badge);
       cellMidi.set(cell,midi);pcCells[pc].push(cell);
-      attachCellTap(cell,()=>handleCellClick(cell,midi,nn,oct,displayName,CAPO));
+      attachCellTap(cell,()=>handleCellClick(cell,midi,nn,oct,displayName,0)); // カポ位置=開放弦なので常に Open 表示
       board.appendChild(cell);
     })();
 
@@ -890,7 +903,8 @@ function buildFretboard(){
       const badge=ec();badge.className='role-badge';
       cell.appendChild(ne);cell.appendChild(nu);cell.appendChild(badge);
       cellMidi.set(cell,midi);pcCells[pc].push(cell);
-      attachCellTap(cell,()=>handleCellClick(cell,midi,nn,oct,displayName,f));
+      // カポ時はカポ基準のフレット数え + 物理番号併記（fret 引数は表示用文字列も受け付ける）
+      attachCellTap(cell,()=>handleCellClick(cell,midi,nn,oct,displayName,CAPO>0?`${f-CAPO} (実${f}F)`:f));
       board.appendChild(cell);
     }
   });
@@ -907,9 +921,9 @@ function buildFretboard(){
 
   // BOTTOM: fret numbers
   board.appendChild(ec());
-  {const o=ec();o.className='fret-num';o.textContent=openLabel;board.appendChild(o);}
+  board.appendChild(openNum());
   {const g=ec();g.className='fret-num nut-gap-header';board.appendChild(g);}
-  for(let f=CAPO+1;f<=FRET_COUNT;f++){const el=ec();el.className='fret-num';el.textContent=f;board.appendChild(el);}
+  for(let f=CAPO+1;f<=FRET_COUNT;f++)board.appendChild(fnum(f-CAPO,f));
 
   if(currentHighlight)applyHighlight(currentHighlight);
   if(currentScaleKey!==null&&currentScaleType)applyScaleHighlight();
