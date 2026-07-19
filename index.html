@@ -16,7 +16,7 @@ h1 span{font-weight:600;color:#b8c8f0;}
 .subtitle{margin-top:5px;font-size:12px;color:var(--text-dim);}
 .legend{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;}
 .legend-label{font-size:11px;font-family:'Space Mono',monospace;color:var(--text-dim);}
-.gradient-bar{width:200px;height:8px;border-radius:4px;border:1px solid var(--border);background:linear-gradient(to right,hsl(220,80%,8%),hsl(220,70%,20%),hsl(200,65%,35%),hsl(185,60%,48%),hsl(45,80%,55%),hsl(38,90%,70%),hsl(30,95%,85%),hsl(0,0%,97%));}
+.gradient-bar{width:200px;height:8px;border-radius:4px;border:1px solid var(--border);background:linear-gradient(to right,hsl(210,72%,52%),hsl(185,60%,48%),hsl(140,55%,45%),hsl(90,60%,50%),hsl(55,85%,58%),hsl(30,90%,56%),hsl(0,78%,50%));}
 
 /* PANELS */
 .panel{width:100%;max-width:960px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
@@ -24,9 +24,11 @@ h1 span{font-weight:600;color:#b8c8f0;}
 
 /* TOOLBAR + DRAWERS (UI案4) */
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;max-width:1200px;}
-.toolbar-btn{font-family:'Space Mono',monospace;font-size:11px;background:var(--bg);color:var(--text-mid);border:1px solid var(--border);border-radius:6px;padding:8px 14px;cursor:pointer;transition:background .1s,color .1s,border-color .1s;white-space:nowrap;}
-.toolbar-btn:hover{color:var(--text-hi);border-color:#3a4a70;}
+.toolbar-btn,.sel-only-btn{font-family:'Space Mono',monospace;font-size:11px;background:var(--bg);color:var(--text-mid);border:1px solid var(--border);border-radius:6px;padding:8px 14px;cursor:pointer;transition:background .1s,color .1s,border-color .1s;white-space:nowrap;}
+.toolbar-btn:hover,.sel-only-btn:hover{color:var(--text-hi);border-color:#3a4a70;}
 .toolbar-btn.active{background:#1a2540;color:#9ab8e0;border-color:#2a3a60;}
+/* 選択音のみ発音モード（ドロワー開閉とは別系統のトグルなので active 色も別） */
+.sel-only-btn.active{background:#12351f;color:#7ad0a0;border-color:#2a7050;}
 /* ドロワーは盤面の下に通常配置（開くと下へスクロールして表示） */
 .drawer-area{width:100%;max-width:1200px;display:flex;flex-direction:column;align-items:center;gap:12px;}
 .drawer-area:not(:has(.drawer:not([hidden]))){display:none;}
@@ -199,6 +201,7 @@ footer code{font-family:'Space Mono',monospace;background:var(--surface);padding
   <button class="toolbar-btn" data-drawer="drawerScale">〜 スケール</button>
   <button class="toolbar-btn" data-drawer="drawerListen">▶ 試聴</button>
   <button class="toolbar-btn" data-drawer="drawerRhythm">🥁 リズム</button>
+  <button class="sel-only-btn" id="selOnlyBtn" title="ONにするとコード/スケールの構成音以外は鳴らない（グリッサンドで音を外さない）">🎯 選択音のみ</button>
 </div>
 
 <div class="board-wrapper">
@@ -717,7 +720,8 @@ const DOUBLE_FRETS=new Set([12,24]);
 function midiToColor(midi){
   const{midiMin:MIDI_MIN,midiMax:MIDI_MAX}=inst();
   const t=Math.max(0,Math.min(1,(midi-MIDI_MIN)/(MIDI_MAX-MIDI_MIN)));
-  const stops=[{t:0,h:222,s:75,l:8},{t:.18,h:220,s:68,l:18},{t:.38,h:205,s:62,l:32},{t:.52,h:185,s:58,l:44},{t:.65,h:50,s:80,l:52},{t:.80,h:38,s:88,l:66},{t:.90,h:30,s:70,l:80},{t:1,h:0,s:0,l:95}];
+  // 2026-07-19 刷新: 明るい青→緑→黄→赤（低音が黒っぽくて無効表示と紛らわしい問題の根治）
+  const stops=[{t:0,h:210,s:72,l:52},{t:.20,h:185,s:60,l:48},{t:.38,h:140,s:55,l:45},{t:.55,h:90,s:60,l:50},{t:.70,h:55,s:85,l:58},{t:.85,h:30,s:90,l:56},{t:1,h:0,s:78,l:50}];
   let i=0;while(i<stops.length-2&&t>stops[i+1].t)i++;
   const a=stops[i],b=stops[i+1],f=(t-a.t)/(b.t-a.t),lr=(x,y)=>x+(y-x)*f;
   const h=lr(a.h,b.h),s=lr(a.s,b.s),l=lr(a.l,b.l);
@@ -754,12 +758,19 @@ function clearPitchHighlight(){
 //  - 指を滑らせると通過セルが順に鳴る（グリッサンド）
 //  - pointerId ごとに独立追跡なので複数指の同時押し・同時スライドも可
 function attachCellTap(cell,fire){cell._fire=fire;} // buildFretboard がセル毎の発音関数を登録する
-const activeGliss=new Map(); // pointerId → 直前に発音したセル
+// 選択音のみ発音モード: ON かつコード/スケール選択中は、構成音以外のセルを鳴らさない
+function cellPlayable(cell){
+  if(!selOnlyMode)return true;
+  const hasSel=currentHighlight||(currentScaleKey!==null&&currentScaleType);
+  if(!hasSel)return true;
+  return cell.classList.contains('chord-tone')||cell.classList.contains('scale-tone');
+}
+const activeGliss=new Map(); // pointerId → 直前に触れたセル（発音スキップ時も追跡は続ける）
 board.addEventListener('pointerdown',e=>{
   if(e.pointerType==='mouse'&&e.button!==0)return;
   const cell=e.target.closest&&e.target.closest('.fret-cell');
   if(!cell||!cell._fire)return;
-  cell._fire();
+  if(cellPlayable(cell))cell._fire();
   activeGliss.set(e.pointerId,cell);
 });
 board.addEventListener('pointermove',e=>{
@@ -767,7 +778,10 @@ board.addEventListener('pointermove',e=>{
   if(e.pointerType==='mouse'&&e.buttons===0){activeGliss.delete(e.pointerId);return;}
   const el=document.elementFromPoint(e.clientX,e.clientY);
   const cell=el&&el.closest?el.closest('.fret-cell'):null;
-  if(cell&&cell._fire&&cell!==activeGliss.get(e.pointerId)){cell._fire();activeGliss.set(e.pointerId,cell);}
+  if(cell&&cell._fire&&cell!==activeGliss.get(e.pointerId)){
+    if(cellPlayable(cell))cell._fire();
+    activeGliss.set(e.pointerId,cell);
+  }
 });
 window.addEventListener('pointerup',e=>activeGliss.delete(e.pointerId));
 window.addEventListener('pointercancel',e=>activeGliss.delete(e.pointerId));
@@ -1459,6 +1473,13 @@ document.querySelectorAll('.toolbar-btn').forEach(btn=>{
     openDrawer=null;
     if(willOpen){d.hidden=false;btn.classList.add('active');openDrawer=d;}
   });
+});
+
+// ---- 選択音のみ発音モードのトグル ----
+let selOnlyMode=false;
+document.getElementById('selOnlyBtn').addEventListener('click',e=>{
+  selOnlyMode=!selOnlyMode;
+  e.currentTarget.classList.toggle('active',selOnlyMode);
 });
 
 // ============================================================
