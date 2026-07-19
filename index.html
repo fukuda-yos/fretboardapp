@@ -101,9 +101,10 @@ h1 span{font-weight:600;color:#b8c8f0;}
 .scale-pill{background:#0f2520;color:#70c0a0;border:1px solid #2a6050;border-radius:4px;padding:2px 7px;font-family:'Space Mono',monospace;font-size:10px;}
 .scale-pill.root{background:#1a3530;color:#a0e0c0;border-color:#3a8060;}
 
-/* スケール表示: 非構成音の上半分を斜線ハッチで無効化（低音域の濃紺と混同しないよう単色黒でなくパターン） */
-.fretboard:has(.scale-tone) .fret-cell:not(.scale-tone)::before{content:'';position:absolute;left:0;right:0;top:0;height:50%;background:repeating-linear-gradient(45deg,rgba(10,12,18,.92) 0 6px,rgba(96,108,132,.35) 6px 7px);border-radius:4px 4px 0 0;pointer-events:none;}
+/* スケール表示: 構成音の上半分をピッチカラーで点灯（セルはデフォルト消灯+色枠のみ） */
+.fret-cell.scale-tone::before{content:'';position:absolute;left:0;right:0;top:0;height:50%;background:var(--pc);border-radius:4px 4px 0 0;pointer-events:none;}
 .fret-cell.scale-root::before{content:'';position:absolute;left:0;right:0;top:0;height:50%;box-shadow:inset 0 2px 0 rgba(255,255,255,.9);border-radius:4px 4px 0 0;pointer-events:none;}
+.fret-cell.scale-tone .note-name{color:var(--pc-text);}
 .rbtn{font-family:'Space Mono',monospace;font-size:10px;background:var(--bg);color:var(--text-mid);border:1px solid var(--border);border-radius:6px;padding:6px 11px;cursor:pointer;transition:background .1s,color .1s,border-color .1s;}
 .rbtn:hover{background:#1a2035;color:var(--text-hi);border-color:#3a5090;}
 .rbtn.active{background:#1a2a50;color:#7ab0f0;border-color:#4a7fd5;}
@@ -144,7 +145,7 @@ h1 span{font-weight:600;color:#b8c8f0;}
 .dot-cell{display:flex;align-items:center;justify-content:center;padding:2px 0 4px;gap:3px;}
 .dot{width:6px;height:6px;border-radius:50%;background:var(--border);}
 .string-label{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;color:var(--text-mid);display:flex;align-items:center;justify-content:center;}
-.fret-cell{border-radius:4px;padding:5px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:44px;border:1px solid rgba(255,255,255,.04);cursor:pointer;user-select:none;position:relative;transition:transform .08s,box-shadow .08s,filter .08s,opacity .15s;touch-action:none;}
+.fret-cell{border-radius:4px;padding:5px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:44px;background:#0f141d;border:1px solid var(--pc,rgba(255,255,255,.15));cursor:pointer;user-select:none;position:relative;transition:transform .08s,box-shadow .08s,filter .08s,opacity .15s;touch-action:none;}
 /* ↑touch-action:none — セル上のジェスチャーは全て発音(タップ/グリッサンド)。盤面の横移動はセル以外のスワイプで行う */
 /* タッチ端末: セル間に緩衝帯を作り隣接誤タップを減らす（セル幅44px化はbuildFretboard側） */
 @media(pointer:coarse){
@@ -159,9 +160,10 @@ h1 span{font-weight:600;color:#b8c8f0;}
 .nut-gap-cell:hover{transform:none;box-shadow:none;}
 
 /* highlight states */
-/* コード表示: 非構成音（.dimmed が付く）の下半分を斜線ハッチで無効化 */
-.fret-cell.dimmed::after{content:'';position:absolute;left:0;right:0;bottom:0;height:50%;background:repeating-linear-gradient(45deg,rgba(10,12,18,.92) 0 6px,rgba(96,108,132,.35) 6px 7px);border-radius:0 0 4px 4px;pointer-events:none;}
+/* コード表示: 構成音の下半分をピッチカラーで点灯（.dimmed は現在ロジック用のみで視覚効果なし） */
+.fret-cell.chord-tone::after{content:'';position:absolute;left:0;right:0;bottom:0;height:50%;background:var(--pc);border-radius:0 0 4px 4px;pointer-events:none;}
 .fret-cell.chord-root::after{content:'';position:absolute;left:0;right:0;bottom:0;height:50%;box-shadow:inset 0 -2px 0 rgba(255,255,255,.9);border-radius:0 0 4px 4px;pointer-events:none;}
+.fret-cell.chord-tone .midi-num{color:var(--pc-text);opacity:.75;}
 
 /* note-click same-pitch highlight */
 .fret-cell.same-pitch{box-shadow:0 0 0 2px rgba(255,210,80,.9),0 0 12px rgba(255,190,40,.35);z-index:8;opacity:1!important;filter:none!important;}
@@ -173,8 +175,8 @@ h1 span{font-weight:600;color:#b8c8f0;}
 .role-badge{position:absolute;bottom:2px;right:3px;font-family:'Space Mono',monospace;font-size:7px;color:rgba(255,255,255,.55);line-height:1;pointer-events:none;}
 .note-name{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;line-height:1;pointer-events:none;}
 .midi-num{font-size:8px;font-family:'Space Mono',monospace;opacity:.5;line-height:1;pointer-events:none;}
-/* 半透明塗り(::before/::after)より文字を上に出す */
-.fret-cell .note-name,.fret-cell .midi-num{position:relative;z-index:2;}
+/* 点灯面(::before/::after)より文字を上に出す。消灯時の文字は明るいグレー */
+.fret-cell .note-name,.fret-cell .midi-num{position:relative;z-index:2;color:#c8d2e8;}
 .fret-cell .role-badge{z-index:2;}
 
 footer{font-size:11px;color:var(--text-dim);text-align:center;line-height:1.8;}
@@ -194,7 +196,11 @@ footer code{font-family:'Space Mono',monospace;background:var(--surface);padding
   <span class="legend-label">高音 (E6)</span>
 </div>
 
-<!-- TOOLBAR + DRAWERS (UI案4) -->
+<!-- 表示順: 盤面 → 機能タブ(ツールバー) → 機能詳細(ドロワー) -->
+<div class="board-wrapper">
+  <div class="fretboard" id="board"></div>
+</div>
+
 <div class="toolbar" id="toolbar">
   <button class="toolbar-btn" data-drawer="drawerInst">🎸 楽器・音色</button>
   <button class="toolbar-btn" data-drawer="drawerChord">♩ コード</button>
@@ -202,10 +208,6 @@ footer code{font-family:'Space Mono',monospace;background:var(--surface);padding
   <button class="toolbar-btn" data-drawer="drawerListen">▶ 試聴</button>
   <button class="toolbar-btn" data-drawer="drawerRhythm">🥁 リズム</button>
   <button class="sel-only-btn" id="selOnlyBtn" title="ONにするとコード/スケールの構成音以外は鳴らない（グリッサンドで音を外さない）">🎯 選択音のみ</button>
-</div>
-
-<div class="board-wrapper">
-  <div class="fretboard" id="board"></div>
 </div>
 
 <div class="drawer-area" id="drawerArea">
@@ -362,7 +364,7 @@ footer code{font-family:'Space Mono',monospace;background:var(--surface);padding
 </div>
 
 <footer>
-  セル上半分 = スケール / 下半分 = コード（色付き = 構成音・ブラック = 非構成音・白ライン = ルート）&nbsp;／&nbsp;
+  セル上半分 = スケール / 下半分 = コード（点灯 = 構成音・消灯 = 非構成音・白ライン = ルート・枠線 = 音高の色）&nbsp;／&nbsp;
   <span style="color:#ffd050">■</span> 同音（同オクターブ）&nbsp;
   <span style="color:rgba(255,208,80,.45)">■</span> 異オクターブ同名音 &nbsp;／&nbsp;
   縦線 = ナット &nbsp;／&nbsp; MIDI 中央C = <code>C4 = 60</code>
@@ -826,9 +828,9 @@ function buildFretboard(){
       const midi=OPEN_MIDI[si],pc=midi%12;
       const nn=NOTE_NAMES_SHARP[pc],oct=Math.floor(midi/12)-1;
       const{bg,text}=midiToColor(midi);
-      const cell=ec();cell.className='fret-cell open';cell.style.background=bg;
-      const ne=ec();ne.className='note-name';ne.style.color=text;ne.textContent=nn;
-      const nu=ec();nu.className='midi-num';nu.style.color=text;nu.textContent=`${oct}·${midi}`;
+      const cell=ec();cell.className='fret-cell open';cell.style.setProperty('--pc',bg);cell.style.setProperty('--pc-text',text);
+      const ne=ec();ne.className='note-name';ne.textContent=nn;
+      const nu=ec();nu.className='midi-num';nu.textContent=`${oct}·${midi}`;
       const badge=ec();badge.className='role-badge';
       cell.appendChild(ne);cell.appendChild(nu);cell.appendChild(badge);
       cellMidi.set(cell,midi);pcCells[pc].push(cell);
@@ -842,9 +844,9 @@ function buildFretboard(){
       const midi=OPEN_MIDI[si]+f,pc=midi%12;
       const nn=NOTE_NAMES_SHARP[pc],oct=Math.floor(midi/12)-1;
       const{bg,text}=midiToColor(midi);
-      const cell=ec();cell.className='fret-cell';cell.style.background=bg;
-      const ne=ec();ne.className='note-name';ne.style.color=text;ne.textContent=nn;
-      const nu=ec();nu.className='midi-num';nu.style.color=text;nu.textContent=`${oct}·${midi}`;
+      const cell=ec();cell.className='fret-cell';cell.style.setProperty('--pc',bg);cell.style.setProperty('--pc-text',text);
+      const ne=ec();ne.className='note-name';ne.textContent=nn;
+      const nu=ec();nu.className='midi-num';nu.textContent=`${oct}·${midi}`;
       const badge=ec();badge.className='role-badge';
       cell.appendChild(ne);cell.appendChild(nu);cell.appendChild(badge);
       cellMidi.set(cell,midi);pcCells[pc].push(cell);
