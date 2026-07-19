@@ -143,7 +143,11 @@ h1 span{font-weight:600;color:#b8c8f0;}
 .dot-cell{display:flex;align-items:center;justify-content:center;padding:2px 0 4px;gap:3px;}
 .dot{width:6px;height:6px;border-radius:50%;background:var(--border);}
 .string-label{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;color:var(--text-mid);display:flex;align-items:center;justify-content:center;}
-.fret-cell{border-radius:4px;padding:5px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:44px;border:1px solid rgba(255,255,255,.04);cursor:pointer;user-select:none;position:relative;transition:transform .08s,box-shadow .08s,filter .08s,opacity .15s;}
+.fret-cell{border-radius:4px;padding:5px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:44px;border:1px solid rgba(255,255,255,.04);cursor:pointer;user-select:none;position:relative;transition:transform .08s,box-shadow .08s,filter .08s,opacity .15s;touch-action:pan-x pan-y;}
+/* タッチ端末: セル間に緩衝帯を作り隣接誤タップを減らす（セル幅44px化はbuildFretboard側） */
+@media(pointer:coarse){
+  .fretboard{column-gap:3px;}
+}
 .fret-cell:hover{transform:scale(1.08);box-shadow:0 0 14px rgba(255,255,255,.18);z-index:10;border-color:rgba(255,255,255,.25);}
 .fret-cell.open{border-radius:4px;}
 .nut-gap-cell{border-left:3px solid #5a6888;background:transparent!important;cursor:default;min-height:44px;}
@@ -744,6 +748,24 @@ function clearPitchHighlight(){
   pitchHighlightCells=[];
 }
 
+// ---- セル発音のポインタ対応（マルチタッチ + 誤発音防止） ----
+// タッチ: 指ごと(pointerId)に独立してタップ判定するため、複数指の同時押しで和音が鳴る。
+// 指が12px以上動いた場合やスクロール開始(pointercancel)では発音しない（従来のclick同様に誤発音なし）。
+// マウス: pointerdown で即発音（clickより反応が良い）。
+function attachCellTap(cell,fire){
+  cell.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='mouse'){if(e.button===0)fire();return;}
+    cell._tapId=e.pointerId;cell._tapX=e.clientX;cell._tapY=e.clientY;
+  });
+  cell.addEventListener('pointerup',e=>{
+    if(e.pointerType==='mouse')return;
+    if(cell._tapId!==e.pointerId)return;
+    cell._tapId=null;
+    if(Math.hypot(e.clientX-cell._tapX,e.clientY-cell._tapY)<12)fire();
+  });
+  cell.addEventListener('pointercancel',()=>{cell._tapId=null;});
+}
+
 function buildFretboard(){
   const{openMidi:OPEN_MIDI,nameMap:NAME_MAP,fretCount:FRET_COUNT}=inst();
   board.innerHTML='';
@@ -754,7 +776,8 @@ function buildFretboard(){
   clearTimeout(ringTimer);lastRingCell=null; // 旧DOMへの参照を破棄
 
   const nStrings=OPEN_MIDI.length;
-  board.style.gridTemplateColumns=`42px 46px 10px repeat(${FRET_COUNT},minmax(36px,1fr))`;
+  const cellMin=matchMedia('(pointer:coarse)').matches?44:36; // タッチ端末はタップしやすい幅に
+  board.style.gridTemplateColumns=`42px 46px 10px repeat(${FRET_COUNT},minmax(${cellMin}px,1fr))`;
 
   // TOP: fret numbers
   board.appendChild(ec());
@@ -789,7 +812,7 @@ function buildFretboard(){
       const badge=ec();badge.className='role-badge';
       cell.appendChild(ne);cell.appendChild(nu);cell.appendChild(badge);
       cellMidi.set(cell,midi);pcCells[pc].push(cell);
-      cell.addEventListener('click',()=>handleCellClick(cell,midi,nn,oct,displayName,0));
+      attachCellTap(cell,()=>handleCellClick(cell,midi,nn,oct,displayName,0));
       board.appendChild(cell);
     })();
 
@@ -805,7 +828,7 @@ function buildFretboard(){
       const badge=ec();badge.className='role-badge';
       cell.appendChild(ne);cell.appendChild(nu);cell.appendChild(badge);
       cellMidi.set(cell,midi);pcCells[pc].push(cell);
-      cell.addEventListener('click',()=>handleCellClick(cell,midi,nn,oct,displayName,f));
+      attachCellTap(cell,()=>handleCellClick(cell,midi,nn,oct,displayName,f));
       board.appendChild(cell);
     }
   });
