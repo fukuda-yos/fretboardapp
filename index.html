@@ -150,7 +150,7 @@ h1 span{font-weight:600;color:#b8c8f0;}
 
 /* FRETBOARD */
 .board-wrapper{width:100%;max-width:1200px;overflow-x:auto;padding-bottom:4px;}
-.fretboard{display:grid;grid-template-columns:42px 46px 10px repeat(24,minmax(36px,1fr));row-gap:3px;min-width:800px;}
+.fretboard{display:grid;grid-template-columns:42px 46px 10px repeat(24,minmax(36px,1fr));row-gap:3px;min-width:800px;padding-right:5px;/* 右端セルの hover/ringing scale はみ出しを吸収（無いと一瞬スクロールバーが出る） */}
 .fret-num{font-family:'Space Mono',monospace;font-size:9px;color:var(--text-dim);text-align:center;padding:3px 0;}
 .dot-cell{display:flex;align-items:center;justify-content:center;padding:2px 0 4px;gap:3px;}
 .dot{width:6px;height:6px;border-radius:50%;background:var(--border);}
