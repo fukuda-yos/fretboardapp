@@ -234,6 +234,11 @@ footer code{font-family:'Space Mono',monospace;background:var(--surface);padding
   <button class="toolbar-btn" data-drawer="drawerListen">▶ 試聴</button>
   <button class="toolbar-btn" data-drawer="drawerRhythm">🥁 リズム</button>
   <button class="sel-only-btn" id="selOnlyBtn" title="ONにするとコード/スケールの構成音以外は鳴らない（グリッサンドで音を外さない）">🎯 選択音のみ</button>
+  <div class="listen-speed" id="globalBpmWrap">
+    <span>BPM</span>
+    <input type="range" id="globalBpm" min="40" max="300" value="120" step="1">
+    <span id="globalBpmVal">120</span>
+  </div>
 </div>
 
 <div class="drawer-area" id="drawerArea">
@@ -357,11 +362,6 @@ footer code{font-family:'Space Mono',monospace;background:var(--surface);padding
     <button class="listen-btn" id="btnArpRandom" disabled title="ランダム">⁂</button>
     <button class="listen-btn" id="btnArpPinch"  disabled title="外→内 (ピンチ)">⊃⊂</button>
     <button class="listen-btn" id="btnArpSpread" disabled title="内→外 (スプレッド)">⊂⊃</button>
-    <div class="listen-speed">
-      <span>BPM</span>
-      <input type="range" id="arpSpeed" min="40" max="300" value="120" step="1">
-      <span id="arpSpeedVal">120</span>
-    </div>
   </div>
 </div>
 
@@ -373,11 +373,6 @@ footer code{font-family:'Space Mono',monospace;background:var(--surface);padding
   <div class="panel-title">メトロノーム &amp; リズム</div>
   <div class="listen-row">
     <button class="listen-btn metro-toggle" id="btnMetroToggle" title="スタート/ストップ">▶</button>
-    <div class="listen-speed">
-      <span>BPM</span>
-      <input type="range" id="metroSpeed" min="40" max="240" value="100" step="1">
-      <span id="metroSpeedVal">100</span>
-    </div>
     <div class="metro-beat-row" id="metroBeatRow">
       <span class="beat-dot" data-beat="0"></span>
       <span class="beat-dot" data-beat="1"></span>
@@ -649,7 +644,7 @@ function playChordSimul(parsed){
   midis.forEach(m=>playNote(midiToFreq(m),0.7,now));
 }
 
-function bpmToMs(){return Math.round(60000/parseInt(document.getElementById('arpSpeed').value,10));}
+function bpmToMs(){return Math.round(60000/parseInt(document.getElementById('globalBpm').value,10));}
 
 function buildArpSequence(midis,mode){
   switch(mode){
@@ -701,10 +696,6 @@ function playSequence(midiArr,activeId=null){
 }
 
 // Listen panel wiring
-document.getElementById('arpSpeed').addEventListener('input',function(){
-  document.getElementById('arpSpeedVal').textContent=this.value;
-});
-
 let currentListenChord=null;
 function setListenChord(parsed){
   currentListenChord=parsed;
@@ -1202,8 +1193,8 @@ let metroBeatsPerBar=4;
 
 const metroToggleBtn=document.getElementById('btnMetroToggle');
 const metroBeatRow=document.getElementById('metroBeatRow');
-const metroSpeedInput=document.getElementById('metroSpeed');
-const metroSpeedVal=document.getElementById('metroSpeedVal');
+const globalBpmInput=document.getElementById('globalBpm');
+const globalBpmVal=document.getElementById('globalBpmVal');
 const metroTimeSig=document.getElementById('metroTimeSig');
 const rhythmBtnsEl=document.getElementById('rhythmBtns');
 
@@ -1316,7 +1307,7 @@ function metroScheduler(){
   // ドラムパターンは4/4前提で作られているためパターン側の定義値を使う。
   const beatsPerBar=def.pattern===null?metroBeatsPerBar:def.beatsPerBar;
   const totalSteps=def.pattern===null?beatsPerBar*4:def.steps;
-  const bpm=parseInt(metroSpeedInput.value,10);
+  const bpm=parseInt(globalBpmInput.value,10);
   const stepsPerBeat=totalSteps/beatsPerBar;
   const secPerStep=(60/bpm)/stepsPerBeat;
   const lookAhead=0.15; // schedule 150ms ahead
@@ -1376,8 +1367,8 @@ metroToggleBtn.addEventListener('click',()=>{
   if(metroRunning)stopMetronome();else startMetronome();
 });
 
-metroSpeedInput.addEventListener('input',function(){
-  metroSpeedVal.textContent=this.value;
+globalBpmInput.addEventListener('input',function(){
+  globalBpmVal.textContent=this.value;
 });
 
 metroTimeSig.addEventListener('change',function(){
@@ -1414,8 +1405,8 @@ Object.entries(RHYTHM_PATTERNS).forEach(([key,def])=>{
     metroStepIndex=0;
     // Apply the pattern's recommended BPM as a starting point
     if(def.defaultBpm){
-      metroSpeedInput.value=def.defaultBpm;
-      metroSpeedVal.textContent=def.defaultBpm;
+      globalBpmInput.value=def.defaultBpm;
+      globalBpmVal.textContent=def.defaultBpm;
     }
   });
   rhythmBtnsEl.appendChild(btn);
